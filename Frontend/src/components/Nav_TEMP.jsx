@@ -99,7 +99,8 @@ function Nav() {
 
         <div className={`fixed top-0 left-0 w-screen h-screen bg-[#000000d6] flex items-center justify-center 
         flex-col gap-5 z-10 lg:hidden ${showHam? "translate-x-0 transition duration-600" : "-translate-x-full transition duration-600"}`}>
-          <GiSplitCross className="w-[35px] h-[35px] fill-white absolute top-5 right-[4%]" onClick={()=>setShowHam(prev=>!prev)}/> 
+          <GiSplitCross className="w-[35px] h-[35px] fill-white absolute top-5 right-[4%] 
+          cursor-pointer" onClick={()=>setShowHam(prev=>!prev)}/> 
           {!userData && (
             <IoPersonCircle className="w-[50px] h-[50px] fill-[black] cursor-pointer" />
           )}
