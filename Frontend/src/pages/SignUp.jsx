@@ -10,6 +10,8 @@ import { toast } from "react-toastify";
 import {ClipLoader} from "react-spinners";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../redux/userSlice";
+import { signInWithPopup } from "firebase/auth";
+import { provider,auth } from "../utils/firebase";
 function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
@@ -34,6 +36,23 @@ function SignUp() {
       console.log(error);
       setLoading(false);
       toast.error(error.message);
+    }
+  }
+  const googleSignUp = async () => {
+    try {
+      const response = await signInWithPopup(auth,provider);
+      let user = response.user;
+      let name = user.displayName;
+      let email = user.email;
+      const result = await axios.post(`${serverUrl}/api/auth/googleauth`, 
+        {name, email, role},
+        {withCredentials:true})
+        dispatch(setUserData(result.data));
+        navigate("/");
+        toast.success("Signup successful");
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response.data.message)
     }
   }
   return (
@@ -135,7 +154,7 @@ items-center justify-center"
           </div>
           <div
             className="w-[80%] h-[40px] border border-[black] 
-          rounded-[5px] flex items-center justify-center cursor-pointer hover:scale-110"
+          rounded-[5px] flex items-center justify-center cursor-pointer hover:scale-110" onClick={googleSignUp}
           >
             <img src={google} alt="google" className="w-[25px]" />
             <span className="text-[18px] text-gray-500">oogle</span>

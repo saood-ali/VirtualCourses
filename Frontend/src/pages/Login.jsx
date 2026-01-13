@@ -10,6 +10,8 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../redux/userSlice";
+import { signInWithPopup } from "firebase/auth";
+import { auth, provider } from "../utils/firebase";
 function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
@@ -35,6 +37,25 @@ function Login() {
       toast.error(error.message);
     }
   }
+
+  const googleLogin = async () => {
+      try {
+        const response = await signInWithPopup(auth,provider);
+        let user = response.user;
+        let name = user.displayName;
+        let email = user.email;
+        let role = "";
+        const result = await axios.post(`${serverUrl}/api/auth/googleauth`, 
+          {name, email, role},
+          {withCredentials:true})
+          dispatch(setUserData(result.data));
+          navigate("/");
+          toast.success("Login successfully");
+      } catch (error) {
+        console.log(error);
+        toast.error(error.response.data.message)
+      }
+    }
   return (
     <div
       className="bg-[#dddbdb] w-full h-full flex
@@ -108,7 +129,7 @@ items-center justify-center"
           </div>
           <div
             className="w-[80%] h-[40px] border border-[black] 
-          rounded-[5px] flex items-center justify-center cursor-pointer hover:scale-110"
+          rounded-[5px] flex items-center justify-center cursor-pointer hover:scale-110" onClick={googleLogin}
           >
             <img src={google} alt="google" className="w-[25px]" />
             <span className="text-[18px] text-gray-500">oogle</span>
