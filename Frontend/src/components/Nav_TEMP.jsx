@@ -52,7 +52,9 @@ function Nav() {
             <IoPersonCircle className="w-[50px] h-[50px] fill-[black] cursor-pointer" onClick={()=>setShow(prev=>!prev)}/>
           )}
 
-          {userData && userData.name && (
+          {userData?.photoUrl ? <img src={userData?.photoUrl} 
+          className="w-[50px] h-[50px] rounded-full text-white flex items-center
+          justify-center text-[20px] border-2 bg-black border-white cursor-pointer" onClick={()=>setShow(prev=>!prev)}/>: (
             <div
               className="w-[50px] h-[50px] rounded-full text-white flex items-center
           justify-center text-[20px] border-2 bg-black border-white cursor-pointer" onClick={()=>setShow(prev=>!prev)}
@@ -95,7 +97,7 @@ function Nav() {
           <span className="bg-[black] text-white px-[30px] py-[10px] rounded-2xl hover:bg-gray-600">My Courses</span>
           </div>}     
         </div>
-        <GiHamburgerMenu className="w-[35px] h-[35px] lg:hidden fill-black cursor-pointer" onClick={()=>setShowHam(prev=>!prev)}/>
+        <GiHamburgerMenu className="w-[35px] h-[35px] lg:hidden text-white cursor-pointer" onClick={()=>setShowHam(prev=>!prev)}/>
 
         <div className={`fixed top-0 left-0 w-screen h-screen bg-[#000000d6] flex items-center justify-center 
         flex-col gap-5 z-10 lg:hidden ${showHam? "translate-x-0 transition duration-600" : "-translate-x-full transition duration-600"}`}>
@@ -105,7 +107,9 @@ function Nav() {
             <IoPersonCircle className="w-[50px] h-[50px] fill-[black] cursor-pointer" />
           )}
 
-          {userData && userData.name && (
+          {userData?.photoUrl ? <img src={userData?.photoUrl} 
+          className="w-[50px] h-[50px] rounded-full text-white flex items-center
+          justify-center text-[20px] border-2 bg-black border-white cursor-pointer"/>: (
             <div
               className="w-[50px] h-[50px] rounded-full text-white flex items-center
           justify-center text-[20px] border-2 bg-black border-white cursor-pointer" 
