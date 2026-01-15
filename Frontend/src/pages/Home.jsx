@@ -5,6 +5,7 @@ import { SiViaplay } from "react-icons/si";
 import ai from "../assets/aisearchicon.png";
 import ai1 from "../assets/blackaicon.png";
 import Logos from "../components/Logos.jsx";
+import ExploreCourses from "../components/ExploreCourses.jsx";
 
 function Home() {
   return (
@@ -38,6 +39,7 @@ function Home() {
         
       </div>
       <Logos/>
+      <ExploreCourses/> 
     </div>
   );
 }
