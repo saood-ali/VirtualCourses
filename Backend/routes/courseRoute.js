@@ -1,7 +1,12 @@
 import express from "express";
-import { createCourse, getPublishedCourses } from "../controllers/courseController";
+import { createCourse, editCourse, getCourseById, getCreatorCourses, getPublishedCourses, removeCourse } from "../controllers/courseController";
 const courseRouter = express.Router();
 courseRouter.post("/create",isAuth,createCourse);
 courseRouter.get("/getpublished",getPublishedCourses);
 courseRouter.get("/getcreator",isAuth,getCreatorCourses);
-courseRouter.post("/editcourse/:courseId",isAuth,editCourse);
+courseRouter.post("/editcourse/:courseId",isAuth,upload.single("courseImage"),editCourse);
+courseRouter.get("/getcourse/:courseId",isAuth,getCourseById);
+courseRouter.delete("/remove/:courseId",isAuth,removeCourse);
+
+export default courseRouter;
+

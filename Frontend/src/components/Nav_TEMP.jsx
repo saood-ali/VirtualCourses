@@ -66,7 +66,7 @@ function Nav() {
           {userData?.role === "educator" && (
             <div
               className="px-[20px] py-[10px] border-2 lg:border-white border-black lg:text-white 
-        bg-[black] text-black rounded-[10px] text-[18px] font-light cursor-pointer"
+        bg-[black] text-black rounded-[10px] text-[18px] font-light cursor-pointer" onClick={()=>navigate("/dashboard")}
             >
               Dashboard
             </div>
@@ -132,7 +132,7 @@ function Nav() {
           {userData?.role === "educator" && (
             <div
               className="w-[200px] h-[65px] border-2 lg:border-white flex items-center justify-center border-black lg:text-white 
-        bg-[black] text-black rounded-[10px] text-[18px] font-light cursor-pointer"
+        bg-[black] text-black rounded-[10px] text-[18px] font-light cursor-pointer" onClick={()=>navigate("/dashboard")}
             > 
               Dashboard
             </div>
