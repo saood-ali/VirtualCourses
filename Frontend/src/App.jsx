@@ -15,6 +15,7 @@ import CreateCourses from './pages/Educator/CreateCourses.jsx'
 import getCreatorCourse from './customHooks/getCreatorCourse.js'
 import EditCourse from './pages/Educator/EditCourse.jsx'
 import getPublishedCourse from './customHooks/getPublishedCourse.js'
+import AllCourses from './pages/AllCourses.jsx'
 export const serverUrl = "http://localhost:8000";
 
 
@@ -33,6 +34,7 @@ function App() {
         <Route path='/profile' element={userData? <Profile/> : <Navigate to={"/signup"}/>} />
         <Route path='/forget-password' element={userData? <ForgetPassword/> : <Navigate to={"/signup"}/>} />
         <Route path='/edit-profile' element={userData? <EditProfile/> : <Navigate to={"/signup"}/>} />
+        <Route path='/allcourses' element={<AllCourses/>} />
         <Route path='/dashboard' element={userData?.role === "educator"? <Dashboard/> : <Navigate to={"/signup"}/>} />
         <Route path='/courses' element={userData?.role === "educator"? <Courses/> : <Navigate to={"/signup"}/>} />
         <Route path='/createcourses' element={userData?.role === "educator"? <CreateCourses/> : <Navigate to={"/signup"}/>} />
