@@ -94,7 +94,8 @@ function Nav() {
           hover:border-white hover:text-white cursor-pointer hover:bg-black ">
           <span className="bg-[black] text-white px-[30px] py-[10px] rounded-2xl
            hover:bg-gray-600" onClick={()=>navigate("/profile")}>My Profile</span>
-          <span className="bg-[black] text-white px-[30px] py-[10px] rounded-2xl hover:bg-gray-600">My Courses</span>
+          <span className="bg-[black] text-white px-[30px] py-[10px] rounded-2xl hover:bg-gray-600" 
+          onClick={()=>navigate("/mycourses")}>My Courses</span>
           </div>}     
         </div>
         <GiHamburgerMenu className="w-[35px] h-[35px] lg:hidden text-white cursor-pointer" onClick={()=>setShowHam(prev=>!prev)}/>
@@ -125,7 +126,7 @@ function Nav() {
             </div>
             <div
               className="w-[200px] h-[65px] border-2 lg:border-white flex items-center justify-center border-black lg:text-white 
-        bg-[black] text-black rounded-[10px] text-[18px] font-light cursor-pointer"
+        bg-[black] text-black rounded-[10px] text-[18px] font-light cursor-pointer" onClick={()=>navigate("/mycourses")}
             >
               My Courses
             </div>
