@@ -12,6 +12,7 @@ import { useDispatch } from "react-redux";
 import { setUserData } from "../redux/userSlice";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../utils/firebase";
+import { BsArrowReturnLeft } from "react-icons/bs";
 function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
@@ -57,12 +58,11 @@ function Login() {
       }
     }
   return (
-    <div
-      className="bg-[#dddbdb] w-full h-full flex
-items-center justify-center"
-    >
-      <form className="w-[90%] md:w-200 h-150 ☐ bg-[white] shadow-xl rounded-2xl flex"
+    <div className="bg-[#dddbdb] w-full h-full flex items-center justify-center">
+    
+      <form className="w-[90%] md:w-200 h-150 ☐ bg-[white] shadow-xl rounded-2xl flex  relative"
        onSubmit={(e)=>e.preventDefault()}>
+       <BsArrowReturnLeft className="absolute top-[16%] left-[5%] w-[22px] h-[22px] cursor-pointer" onClick={()=>navigate("/")} />
         {/* Left Portion */}
         <div className="md:w-[50%] w-full h-full flex flex-col items-center justify-center gap-3 ">
           <div>

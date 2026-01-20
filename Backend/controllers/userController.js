@@ -2,7 +2,7 @@ import uploadOnCloudinary from "../config/cloudinary.js";
 import User from "../models/userModel.js";
 export const getCurrentUser = async(req,res)=>{
     try {
-        const user = await User.findById(req.UserID).select("-password");
+        const user = await User.findById(req.UserID).select("-password").populate("enrolledCourses");
         if(!user){
             return res.status(400).json({message:"User not found"})
         }
