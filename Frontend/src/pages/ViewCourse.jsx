@@ -142,9 +142,8 @@ function ViewCourse() {
             onClick={()=>handleEnroll(userData?._id,courseId)}>
              Enroll Now
             </button> :
-            <button className='bg-green-100 text-green-500 px-6 py-2 rounded hover:bg-gray-700 mt-3 cursor-pointer'>
-             Watch Now
-            </button>}
+            <button className='bg-green-100 text-green-500 px-6 py-2 rounded hover:bg-gray-700 mt-3 cursor-pointer'
+            onClick={()=>navigate(`/viewlecture/${courseId}`)}>Watch Now</button>}
            </div>
 
          </div>
