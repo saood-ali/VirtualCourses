@@ -22,7 +22,7 @@ function CardPage() {
        {
         popularCourses?.map((course,index)=>(
             <Card key={index} thumbnail={course.thumbnail} title={course.title}
-                category={course.category} price={course.price} id={course._id}/>
+                category={course.category} price={course.price} id={course._id} reviews={course.reviews}/>
         ))
        }
       </div>

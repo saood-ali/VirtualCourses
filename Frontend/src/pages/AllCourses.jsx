@@ -91,7 +91,7 @@ function AllCourses() {
     {
       filterCourses?.map((course,index)=>(
         <Card key={index} thumbnail={course.thumbnail} title={course.title} description={course.description}
-         price={course.price} category={course.category} id={course._id}/>
+         price={course.price} category={course.category} id={course._id} reviews={course.reviews}/>
       ))
     }
     </main>
