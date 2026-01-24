@@ -36,7 +36,7 @@ function Home() {
           </button>
           <button className="px-[20px] py-[10px] lg:bg-white bg-black 
           lg:text-black text-white rounded-[10px] text-[18px] font-light
-          flex gap-2 cursor-pointer items-center justify-center">
+          flex gap-2 cursor-pointer items-center justify-center" onClick={()=>navigate("/search")}>
           Search with AI
           <img src={ai} alt="ai_icon" className="w-[30px] h-[30px] rounded-full hidden lg:block"/>
           <img src={ai1} alt="ai1_icon" className="w-[35px] h-[35px] rounded-full lg:hidden"/>

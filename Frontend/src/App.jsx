@@ -23,6 +23,7 @@ import ScrollToTop from './components/ScrollToTop.jsx'
 import ViewLectures from './pages/ViewLectures.jsx'
 import MyEnrolledCourses from './pages/MyEnrolledCourses.jsx'
 import getAllReviews from './customHooks/getAllReviews.js'
+import SearchWithAi from './pages/SearchWithAi.jsx'
 export const serverUrl = "http://localhost:8000";
 
 
@@ -53,6 +54,7 @@ function App() {
         <Route path='/viewcourse/:courseId' element={userData ? <ViewCourse/> : <Navigate to={"/signup"}/>} />
         <Route path='/viewlecture/:courseId' element={userData ? <ViewLectures/> : <Navigate to={"/signup"}/>} />
         <Route path='/mycourses' element={userData ? <MyEnrolledCourses/> : <Navigate to={"/signup"}/>} />
+        <Route path='/search' element={userData ? <SearchWithAi/> : <Navigate to={"/signup"}/>} />  
       </Routes>
     </div>
   )
