@@ -1,4 +1,4 @@
-import Course from "../models/courseModel";
+import Course from "../models/courseModel.js";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 dotenv.config();

@@ -2,8 +2,8 @@ import express from "express";
 import { createCourse, createLecture, editCourse, 
     editLecture, 
     getCourseById, getCourseLecture, getCreatorById, getCreatorCourses, getPublishedCourses, removeCourse, 
-    removeLecture} from "../controllers/courseController";
-import upload from "../middleware/multer";
+    removeLecture} from "../controllers/courseController.js";
+import upload from "../middleware/multer.js";
 import { searchWithAi } from "../controllers/searchController.js";
 const courseRouter = express.Router();
 //for courses
