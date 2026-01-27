@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { serverUrl } from '../App';
 import { useDispatch } from 'react-redux';
 import { setReviewData } from '../redux/reviewSlice';
-const getAllReviews = () => {
+const useGetAllReviews = () => {
     const dispatch = useDispatch();
    
     useEffect(()=>{
@@ -17,7 +17,7 @@ const getAllReviews = () => {
             }
         }
         allReviews();
-    },[])
+    },[dispatch])
 }
 
-export default getAllReviews
+export default useGetAllReviews;

@@ -36,31 +36,36 @@ function EditCourse() {
     setFrontendImage(URL.createObjectURL(file));
   }
 
-  const getCourseById = async()=>{
+  useEffect(() => {
+  const fetchCourseData = async () => {
     try {
-      const result = await axios.get(`${serverUrl}/api/course/getcourse/${courseId}`,{withCredentials:true});
-      console.log(result.data);
-      setSelectCourse(result.data);
+      const result = await axios.get(`${serverUrl}/api/course/getcourse/${courseId}`, {
+        withCredentials: true
+      });
+      
+      const courseData = result.data;
+      setSelectCourse(courseData);
+
+      // Setting all the form fields IMMEDIATELY here
+      // This prevents the "cascading update" warning and saves a re-render
+      if (courseData) {
+        setTitle(courseData.title || "");
+        setSubTitle(courseData.subtitle || "");
+        setDescription(courseData.description || "");
+        setCategory(courseData.category || "");
+        setLevel(courseData.level || "");
+        setPrice(courseData.price || "");
+        setFrontendImage(courseData.thumbnail || img);
+        setIsPublished(courseData.isPublished);
+      }
     } catch (error) {
       console.log(error);
     }
-  }
-  useEffect(()=>{
-   if(selectCourse)
-   {
-    setTitle(selectCourse.title || "")
-    setSubTitle(selectCourse.subtitle || "")
-    setDescription(selectCourse.description || "")
-    setCategory(selectCourse.category || "")
-    setLevel(selectCourse.level || "")
-    setPrice(selectCourse.price || "")
-    setFrontendImage(selectCourse.thumbnail || img)
-    setIsPublished(selectCourse?.isPublished)
-   }
-  },[selectCourse])
-  useEffect(()=>{
-    getCourseById();
-  },[])
+  };
+
+  fetchCourseData();
+  
+}, [courseId]);
 
   const handleEditCourse = async () => {
     setLoading(true);

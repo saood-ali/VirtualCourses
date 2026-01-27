@@ -25,7 +25,7 @@ function Courses() {
           }
          }
          creatorCourses();
-      },[userData])
+      },[userData,dispatch])
   return (
     <div className="flex min-h-screen bg-gray-100">
       <div className="w-full min-h-screen p-4 sm:p-6 bg-gray-100">

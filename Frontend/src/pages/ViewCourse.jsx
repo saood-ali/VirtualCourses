@@ -1,123 +1,130 @@
-import React, { useState } from 'react';
-import {BsArrowReturnLeft} from 'react-icons/bs';
+import React, { useState, useMemo, useEffect } from 'react';
+import { BsArrowReturnLeft } from 'react-icons/bs';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import { setSelectedCourse } from '../redux/courseSlice';
-import { useEffect } from 'react';
 import img from "../assets/empty_folder.png";
-import { FaStar } from "react-icons/fa";
-import { FaPlayCircle } from "react-icons/fa";
-import { FaLock } from "react-icons/fa";
+import { FaStar, FaPlayCircle, FaLock } from "react-icons/fa";
 import axios from 'axios';
 import { serverUrl } from '../App';
 import Card from '../components/Card';
 import { toast } from 'react-toastify';
 import { ClipLoader } from 'react-spinners';
 
-
 function ViewCourse() {
   const navigate = useNavigate();
-  const {courseId} = useParams();
-  const {courseData} = useSelector(state=>state.course);
-  const {selectedCourse} = useSelector(state=>state.course);
-  const {userData} = useSelector(state=>state.user);
+  const { courseId } = useParams();
+  const { courseData, selectedCourse } = useSelector((state) => state.course);
+  const { userData } = useSelector((state) => state.user);
   const dispatch = useDispatch();
-  const [selectedLecture,setSelectedLecture] = useState(null);
+  const [selectedLecture, setSelectedLecture] = useState(null);
   const [creatorData, setCreatorData] = useState(null);
-  const [creatorCourses,setCreatorCourses] = useState(null);
-  const [isEnrolled,setIsEnrolled] = useState(null);
-  const [rating,setRating] = useState(0);
-  const [comment,setComment] = useState("");
-  const [loading,setLoading] = useState(false);
+  
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const isAlreadyEnrolled = userData?.enrolledCourses?.some((c) =>
+    (typeof c === "string" ? c : c._id).toString() === courseId?.toString()
+  );
+
+  const isEnrolled = isAlreadyEnrolled || paymentSuccess;
 
 
-  const fetchCourseData = async()=>{
-    courseData.map((course)=>{
-      if(course._id === courseId){
-        dispatch(setSelectedCourse(course));
-        console.log(selectedCourse);
-        return null;
+  useEffect(() => {
+    if (courseData && courseId) {
+      const foundCourse = courseData.find((course) => course._id === courseId);
+      if (foundCourse) {
+        dispatch(setSelectedCourse(foundCourse));
       }
-    })
-  }
+    }
+  }, [courseData, courseId, dispatch]);
 
-  useEffect(()=>{
+  // Handle Creator Data (Kept as is)
+  useEffect(() => {
     const handleCreator = async () => {
-      if(selectedCourse?.creator){
+      if (selectedCourse?.creator) {
         try {
-          const result = await axios.post(`${serverUrl}/api/course/creator`,{userId:selectedCourse?.creator},{withCredentials:true})
-          console.log(result.data);
-          setCreatorData(result.data)
+          const result = await axios.post(
+            `${serverUrl}/api/course/creator`,
+            { userId: selectedCourse?.creator },
+            { withCredentials: true }
+          );
+          setCreatorData(result.data);
         } catch (error) {
-          console.log(error)
+          console.log(error);
         }
       }
-    }
+    };
     handleCreator();
-  },[selectedCourse])
+  }, [selectedCourse]);
 
-  const checkEnrollment = ()=>{
-    const verify = userData?.enrolledCourses?.some(c=>
-    (typeof c === "string" ? c : c._id).toString() === courseId?.toString());
-    if(verify){
-      setIsEnrolled(true);
+  // Creator Courses (Kept as is - logic was correct)
+  const creatorCourses = useMemo(() => {
+    if (creatorData?._id && courseData?.length > 0) {
+      return courseData.filter((course) =>
+        course.creator === creatorData?._id && course._id !== courseId
+      );
     }
-  }
+    return [];
+  }, [creatorData, courseData, courseId]);
 
-  useEffect(()=>{
-    fetchCourseData();
-    checkEnrollment();
-  },[courseData,courseId,userData])
-
-  useEffect(()=>{
-    if(creatorData?._id && courseData.length > 0){
-      const creatorCourse = courseData.filter((course)=>
-      course.creator === creatorData?._id && course._id !== courseId)
-      setCreatorCourses(creatorCourse)
-    }
-    
-  },[creatorData,courseData])
-
-  const handleEnroll = async(userId,courseId)=>{
+  const handleEnroll = async (userId, courseId) => {
     try {
-      const orderData = await axios.post(`${serverUrl}/api/order/razorpay-order`,{userId,courseId},{withCredentials:true});
-      console.log(orderData);
-      
+      const orderData = await axios.post(
+        `${serverUrl}/api/order/razorpay-order`,
+        { userId, courseId },
+        { withCredentials: true }
+      );
+
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: orderData.data.amount,
         currency: "INR",
-        name:"VirtualCourses",
-        description:"Course Enrollment Payment",
-        order_id:orderData.data.id,
-        handler: async function (response){
-          console.log("Razorpay response",response);
+        name: "VirtualCourses",
+        description: "Course Enrollment Payment",
+        order_id: orderData.data.id,
+        handler: async function (response) {
+          console.log("Razorpay response", response);
           try {
-            const verifyPayment = await axios.post(`${serverUrl}/api/order/verifypayment`,{
-              ...response,
-              courseId,
-              userId
-            },{withCredentials:true});
-            setIsEnrolled(true);
+            const verifyPayment = await axios.post(
+              `${serverUrl}/api/order/verifypayment`,
+              {
+                ...response,
+                courseId,
+                userId,
+              },
+              { withCredentials: true }
+            );
+            
+            // FIX 4: Update the paymentSuccess state instead of isEnrolled
+            setPaymentSuccess(true);
+            
             console.log(verifyPayment);
             toast.success(verifyPayment.data.message);
           } catch (error) {
-            toast.error(error.response.data.message);
+            toast.error(error.response?.data?.message || "Payment verification failed");
           }
-        }
-      }
+        },
+      };
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (error) {
       console.log(error);
-      toast.error("Something went wrong while enrolling.")
+      toast.error("Something went wrong while enrolling.");
     }
-  }
-  
-  const handleReview = async()=>{
+  };
+
+  const handleReview = async () => {
     setLoading(true);
     try {
-      const result = await axios.post(`${serverUrl}/api/review/createreview`,{rating,comment,courseId},{withCredentials:true})
+      const result = await axios.post(
+        `${serverUrl}/api/review/createreview`,
+        { rating, comment, courseId },
+        { withCredentials: true }
+      );
       setLoading(false);
       toast.success("Review Added");
       console.log(result.data);
@@ -126,21 +133,21 @@ function ViewCourse() {
     } catch (error) {
       console.log(error);
       setLoading(false);
-      toast.error(error.response.data.message);
+      toast.error(error.response?.data?.message || "Error adding review");
       setRating(0);
       setComment("");
     }
-  }
+  };
 
-  const calculateAvgReview = (reviews)=>{
-    if(!reviews || reviews.length === 0){
+  const calculateAvgReview = (reviews) => {
+    if (!reviews || reviews.length === 0) {
       return 0;
     }
-    const total = reviews.reduce((sum,review)=>sum + review.rating,0);
+    const total = reviews.reduce((sum, review) => sum + review.rating, 0);
     return (total / reviews.length).toFixed(1);
-  }
+  };
+  
   const avgRating = calculateAvgReview(selectedCourse?.reviews);
-  console.log("Average Rating :", avgRating);
   return (
     <div className='min-h-screen bg-gray-50 p-6'>
      <div className='max-w-6xl mx-auto bg-white shadow-md rounded-xl p-6 space-y-6 relative'>

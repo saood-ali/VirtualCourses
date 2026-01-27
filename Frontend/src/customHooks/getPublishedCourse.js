@@ -1,10 +1,10 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import axios from 'axios';
 import { serverUrl } from '../App.jsx';
 import { useDispatch } from 'react-redux';
 import { setCourseData } from '../redux/courseSlice';
 
-const getPublishedCourse = () => {
+const useGetPublishedCourse = () => {
     const dispatch = useDispatch();
     useEffect(()=>{
         const getCourseData = async () => {
@@ -17,7 +17,7 @@ const getPublishedCourse = () => {
             }
         }
         getCourseData();
-    },[])
+    },[dispatch])
 }
 
-export default getPublishedCourse;
+export default useGetPublishedCourse;

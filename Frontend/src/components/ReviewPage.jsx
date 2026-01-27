@@ -1,15 +1,9 @@
-import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import ReviewCard from "./ReviewCard";
 
 function ReviewPage() {
     const {reviewData} = useSelector(state=>state.review);
-    const [latestReview,setLatestReview] = useState(null);
-
-    useEffect(()=>{
-      
-      setLatestReview(reviewData?.slice(0,6))
-    },[reviewData])
+    const latestReview = reviewData?.slice(0, 6) || [];
   return (
     <div className="flex items-center justify-center flex-col">
       <h1 className="md:text-[45px] text-[30px] font-semibold text-center mt-[30px] px-[20px]">

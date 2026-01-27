@@ -1,5 +1,4 @@
 import axios from 'axios';
-import React from 'react';
 import { useState } from 'react';
 import { BsArrowReturnLeft } from "react-icons/bs";
 import { useDispatch, useSelector } from 'react-redux';

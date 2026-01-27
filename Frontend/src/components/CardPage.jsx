@@ -1,13 +1,9 @@
-import React,{useState,useEffect} from "react";
 import { useSelector } from "react-redux";
 import Card from "./Card";
 
 function CardPage() {
     const {courseData} = useSelector(state=>state.course);
-    const [popularCourses,setPopularCourses] = useState([])
-    useEffect(()=>{
-        setPopularCourses(courseData?.slice(0,6));
-    },[courseData]) 
+    const popularCourses = courseData?.slice(0,6) || [];
   return (
     <div className="relative flex items-center justify-center flex-col">
       <h1 className="md:text-[45px] text-[30px] font-semibold text-center

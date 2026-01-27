@@ -1,9 +1,8 @@
-import React, { useState } from "react";
+import { useRef, useEffect, useState } from 'react';
 import { BsArrowReturnLeft } from "react-icons/bs";
 import ai from "../assets/aisearchicon.png";
 import { RiMicAiFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 import axios from "axios";
 import { serverUrl } from "../App.jsx";
 import start from "../assets/aiaudio.mp3";
@@ -18,23 +17,41 @@ function SearchWithAi() {
     let utterance = new SpeechSynthesisUtterance(message);
     window.speechSynthesis.speak(utterance);
   }
-  const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
-  const recognition = new SpeechRecognition();
-  if (!recognition) {
-    toast.error("Speech recognition not supported");
+  const recognitionRef = useRef(null);
+
+useEffect(() => {
+  // Initialize SpeechRecognition only once when component mounts
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  
+  if (SpeechRecognition) {
+    recognitionRef.current = new SpeechRecognition();
+    recognitionRef.current.continuous = false; 
+    recognitionRef.current.lang = 'en-US';
   }
-  const handleSearch = async () => {
-    if (!recognition) return;
-    recognition.start();
+}, []);
+ const handleSearch = () => {
+    // Safety check: ensure browser supports it
+    if (!recognitionRef.current) return;
+
     setListening(true);
     startSound.play();
-    recognition.onresult = async (e) => {
-      const transcript = e.results[0][0].transcript.trim();
-      setInput(transcript);
-      await handleRecommendation(transcript);
+
+    // ✅ Access the instance via .current
+    recognitionRef.current.onresult = async (e) => {
+        const transcript = e.results[0][0].transcript.trim();
+        setInput(transcript);
+        await handleRecommendation(transcript);
+        setListening(false); // Good practice to turn off listening state here
     };
-  };
+
+    // Handle errors or end of speech
+    recognitionRef.current.onerror = (e) => {
+        console.error("Speech error:", e);
+        setListening(false);
+    };
+
+    recognitionRef.current.start();
+};
   const handleRecommendation = async (query) => {
     try {
       const result = await axios.post(

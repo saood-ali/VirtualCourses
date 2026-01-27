@@ -1,17 +1,15 @@
-import React, { useState } from 'react'
+import { useMemo, useState } from 'react';
 import Nav from '../components/Nav_TEMP';
 import {BsArrowReturnLeft} from 'react-icons/bs';
 import { useNavigate } from 'react-router-dom';
 import ai from "../assets/ai_search_icon.png"
 import { useSelector } from 'react-redux';
-import { useEffect } from 'react';
 import Card from '../components/Card';
 
 function AllCourses() {
     const navigate = useNavigate();
     const {courseData} = useSelector(state=>state.course);
     const [category,setCategory] = useState([]);
-    const [filterCourses,setFilterCourses] = useState([]);
     const [isSidebarVisible, setIsSidebarVisible] = useState(false);
 
     const toggleCategory = (e)=>{
@@ -22,21 +20,16 @@ function AllCourses() {
         setCategory(prev=>[...prev,e.target.value])
       }
     }
-    const applyFilter = ()=>{
-      let courseCopy = courseData?.slice();
-      if(category.length > 0){
-        courseCopy = courseCopy.filter(c=>category.includes(c.category))
-      }
-      setFilterCourses(courseCopy)
-    }
+  const filterCourses = useMemo(() => {
+  let courseCopy = courseData?.slice() || [];
 
-    useEffect(()=>{
-      setFilterCourses(courseData)
-    },[courseData])
+  if (category.length > 0) {
+    courseCopy = courseCopy.filter(c => category.includes(c.category));
+  }
 
-    useEffect(()=>{
-      applyFilter()
-    },[category])
+  return courseCopy;
+}, [courseData, category]);
+
   return (
     <div className='flex min-h-screen bg-gray-50'>
     <Nav/>
