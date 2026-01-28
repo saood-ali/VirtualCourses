@@ -5,7 +5,7 @@ import { FaEye } from "react-icons/fa";
 import { HiEyeSlash } from "react-icons/hi2";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { serverUrl } from "../App";
+import { serverUrl } from "../App.jsx";
 import { toast } from "react-toastify";
 import {ClipLoader} from "react-spinners";
 import { useDispatch } from "react-redux";

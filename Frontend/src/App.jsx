@@ -1,8 +1,8 @@
-import React from 'react'
-import Home from './pages/Home.jsx'
-import SignUp from './pages/Signup.jsx'
-import Login from './pages/Login'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+
+import Home from './pages/Home.jsx';
+import SignUp from './pages/SignUp.jsx';
+import Login from './pages/Login.jsx';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import getCurrentUser from './customHooks/getCurrentUser';
 import { useSelector } from 'react-redux'
@@ -24,7 +24,7 @@ import ViewLectures from './pages/ViewLectures.jsx'
 import MyEnrolledCourses from './pages/MyEnrolledCourses.jsx'
 import getAllReviews from './customHooks/getAllReviews.js'
 import SearchWithAi from './pages/SearchWithAi.jsx'
-export const serverUrl = "https://virtualcourses-wl1x.onrender.com";
+export const serverUrl = "https://virtual-courses-two.vercel.app/";
 
 
 function App() {

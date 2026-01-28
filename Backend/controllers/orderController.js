@@ -1,7 +1,7 @@
 import razorpay from 'razorpay';
 import dotenv from 'dotenv';
-import Course from '../models/courseModel';
-import User from '../../../Youtube-blog/models/user';
+import Course from '../models/courseModel.js';
+import User from '../models/userModel.js';
 dotenv.config();
 
 const RazorPayInstance = new razorpay({

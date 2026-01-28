@@ -1,7 +1,7 @@
-import { freeze } from "@reduxjs/toolkit";
-import Lecture from "../models/lectureModel";
-import Course from "../models/courseModel";
-import User from "../models/userModel";
+import { uploadOnCloudinary } from "../config/cloudinary.js";
+import Lecture from "../models/lectureModel.js";
+import Course from "../models/courseModel.js";
+import User from "../models/userModel.js";
 
 export const createCourse = async(req,res)=>{
     try {

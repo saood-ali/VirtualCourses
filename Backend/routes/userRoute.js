@@ -1,4 +1,5 @@
 import express from "express";
+import  upload  from "../middleware/multer.js";
 import isAuth from "../middleware/isAuth.js";
 import { getCurrentUser, updateProfile } from "../controllers/userController.js";
 const userRouter = express.Router();
