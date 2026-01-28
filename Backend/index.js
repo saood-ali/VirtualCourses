@@ -20,11 +20,10 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use(cors({
-    origin: [
-        "http://localhost:5173", 
-        "https://virtual-courses-frontend.vercel.app", //Vercel Frontend URL
-    ],
-    credentials: true
+    origin: ["http://localhost:5173", "https://virtual-courses-frontend.vercel.app"],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]     
 }));
 
 app.use("/api/auth", authRouter);
