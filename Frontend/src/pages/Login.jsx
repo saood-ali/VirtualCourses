@@ -32,7 +32,7 @@ function Login() {
 
     localStorage.setItem("token", result.data.token);
     
-    dispatch(setUserData(result.data));
+    dispatch(setUserData(result.data.user));
     setLoading(false);
     toast.success("Login Successfully");
     navigate("/");
@@ -58,8 +58,7 @@ const googleLogin = async () => {
     );
 
     localStorage.setItem("token", result.data.token);
-
-    dispatch(setUserData(result.data));
+    dispatch(setUserData(result.data.user));
     navigate("/");
     toast.success("Login successfully");
   } catch (error) {

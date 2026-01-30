@@ -17,7 +17,7 @@ const EditProfileForm = ({ initialData }) => {
   const [photoUrl, setPhotoUrl] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const handleEditProfile = async () => {
+const handleEditProfile = async () => {
   setLoading(true);
   try {
     const formData = new FormData();
@@ -25,18 +25,25 @@ const EditProfileForm = ({ initialData }) => {
     formData.append("description", description);
     if (photoUrl) {
       formData.append("photoUrl", photoUrl);
-    } 
+    }
 
-    const token = localStorage.getItem("token"); 
+    const token = localStorage.getItem("token");
+    
+    const config = {
+      withCredentials: true,
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    };
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
     const result = await axios.post(
-      `${serverUrl}/api/user/profile`, 
-      formData, 
-      { 
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      }
+      `${serverUrl}/api/user/profile`,
+      formData,
+      config 
     );
 
     dispatch(setUserData(result.data));

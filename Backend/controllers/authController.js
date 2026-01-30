@@ -55,7 +55,11 @@ export const login = async(req,res)=>{
             sameSite:"none",
             maxAge:1000*60*60*24*7,
         })
-        return res.status(200).json(user)
+        return res.status(200).json({
+              message: `Welcome back ${user.name}`,
+              token: token, 
+              user: user
+})
         
     } catch (error) {
         return res.status(500).json({message:`Login Error ${error.message}`})
