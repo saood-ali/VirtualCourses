@@ -21,42 +21,52 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
 
-  const handleLogin = async()=>{
-    setLoading(true)
-    try {
-      const result = await axios.post(`${serverUrl}/api/auth/login,{
-        email,
-        password
-        }, {withCredentials:true}`);
-        dispatch(setUserData(result.data));
-        setLoading(false);
-        toast.success("Login Successfully");
-        navigate("/");
-    } catch (error) {
-      console.log(error);
-      setLoading(false);
-      toast.error(error.message);
-    }
-  }
+ const handleLogin = async () => {
+  setLoading(true);
+  try {
+    const result = await axios.post(
+      `${serverUrl}/api/auth/login`, 
+      { email, password }, 
+      { withCredentials: true }
+    );
 
-  const googleLogin = async () => {
-      try {
-        const response = await signInWithPopup(auth,provider);
-        let user = response.user;
-        let name = user.displayName;
-        let email = user.email;
-        let role = "";
-        const result = await axios.post(`${serverUrl}/api/auth/googleauth`, 
-          {name, email, role},
-          {withCredentials:true})
-          dispatch(setUserData(result.data));
-          navigate("/");
-          toast.success("Login successfully");
-      } catch (error) {
-        console.log(error);
-        toast.error(error.response.data.message)
-      }
-    }
+    localStorage.setItem("token", result.data.token);
+    
+    dispatch(setUserData(result.data));
+    setLoading(false);
+    toast.success("Login Successfully");
+    navigate("/");
+  } catch (error) {
+    console.log(error);
+    setLoading(false);
+    toast.error(error.response?.data?.message || "Login Failed");
+  }
+};
+
+const googleLogin = async () => {
+  try {
+    const response = await signInWithPopup(auth, provider);
+    let user = response.user;
+    let name = user.displayName;
+    let email = user.email;
+    let role = ""; 
+
+    const result = await axios.post(
+      `${serverUrl}/api/auth/googleauth`,
+      { name, email, role },
+      { withCredentials: true }
+    );
+
+    localStorage.setItem("token", result.data.token);
+
+    dispatch(setUserData(result.data));
+    navigate("/");
+    toast.success("Login successfully");
+  } catch (error) {
+    console.log(error);
+    toast.error(error.response?.data?.message || "Google Login Failed");
+  }
+};
   return (
     <div className="bg-[#dddbdb] w-full h-full flex items-center justify-center">
     

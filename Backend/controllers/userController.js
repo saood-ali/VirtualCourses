@@ -14,7 +14,7 @@ export const getCurrentUser = async(req,res)=>{
 
 export const updateProfile = async(req,res)=>{
     try {
-        const userId = req.userID;
+        const userId = req.UserID;
         const {name, description} = req.body;
         let photoUrl;
         if(req.file){

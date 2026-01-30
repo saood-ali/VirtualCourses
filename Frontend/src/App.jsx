@@ -24,7 +24,7 @@ import ViewLectures from './pages/ViewLectures.jsx'
 import MyEnrolledCourses from './pages/MyEnrolledCourses.jsx'
 import getAllReviews from './customHooks/getAllReviews.js'
 import SearchWithAi from './pages/SearchWithAi.jsx'
-export const serverUrl = "https://virtual-courses-two.vercel.app/";
+export const serverUrl = "https://virtual-courses-two.vercel.app";
 
 
 function App() {
