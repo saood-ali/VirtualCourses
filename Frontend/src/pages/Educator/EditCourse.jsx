@@ -76,7 +76,7 @@ function EditCourse() {
     formData.append("category",category)
     formData.append("level",level)
     formData.append("price",price)
-    formData.append("thumbnail",backendImage)
+    formData.append("courseImage",backendImage)
     formData.append("isPublished",isPublished)
     try {
       const result = await axios.post(`${serverUrl}/api/course/editcourse/${courseId}`, formData, {withCredentials:true});

@@ -49,18 +49,24 @@ export const editCourse = async(req,res)=>{
     try {
         const {courseId} = req.params;
         const {title, subTitle, description, category, level, isPublished, price} = req.body;
-        let thumbnail;
-        if(req.file){
-            thumbnail = await uploadOnCloudinary(req.file.path)
-        }
+        
         let course = await Course.findById(courseId);
         if(!course){
             return res.status(400).json({message:"Course not found"})
         }
+
+        let thumbnail = course.thumbnail; 
+
+        if(req.file){
+            thumbnail = req.file.path; 
+        }
+
         const updateData = {title, subTitle, description, category, level, isPublished, price, thumbnail}
+        
         course = await Course.findByIdAndUpdate(courseId, updateData, {new:true})
         return res.status(200).json(course)
     } catch (error) {
+        console.log(error);
         return res.status(500).json({message:`Edit course error ${error}`})
     }
 }

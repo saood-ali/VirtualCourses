@@ -11,9 +11,10 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: "VirtualCourses", 
-    allowed_formats: ["jpg", "png", "jpeg"], 
-  }
+    folder: "VirtualCourses",
+    resource_type: "image", // Automatically detect image/video
+    allowedFormats: ["jpg", "png", "jpeg"],
+  },
 });
 
 const upload = multer({ storage });
