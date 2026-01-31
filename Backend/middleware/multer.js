@@ -1,11 +1,21 @@
 import multer from "multer";
-let storage = multer.diskStorage({
-    destination:(req,file,cb)=>{
-        cb(null,"../public")
-    },
-    filename:(req,file,cb)=>{
-        cb(null, file.originalname)
-    }
-})
-const upload = multer({storage});
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "VirtualCourses", 
+    allowed_formats: ["jpg", "png", "jpeg"], 
+  }
+});
+
+const upload = multer({ storage });
+
 export default upload;
