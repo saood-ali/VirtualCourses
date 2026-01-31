@@ -1,7 +1,8 @@
-import React from "react";
+
 import about from "../assets/ai_student.png";
 import { TfiLayoutLineSolid } from "react-icons/tfi";
 import { BsPatchCheckFill } from "react-icons/bs";
+import video from "../assets/Modified_Video_With_More_Texts.mp4";
 
 function About() {
   return (
@@ -11,7 +12,7 @@ function About() {
         <img src={about} alt="" className="w-[80%] h-[90%] rounded-lg" />
         <div className="max-w-[350px] mx-auto p-4 absolute top-[55%] left-[50%]">
           <video
-            src=""
+            src={video}
             className="w-full rounded-xl shadow-lg border-2 border-white"
             controls
             autoplay

@@ -18,43 +18,34 @@ const EditProfileForm = ({ initialData }) => {
   const [loading, setLoading] = useState(false);
 
 const handleEditProfile = async () => {
-  setLoading(true);
-  try {
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("description", description);
-    if (photoUrl) {
-      formData.append("photoUrl", photoUrl);
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("description", description);
+      if (photoUrl) {
+        formData.append("photoUrl", photoUrl); 
+      }
+
+      const config = {
+        withCredentials: true, 
+      };
+
+      const result = await axios.post(
+        `${serverUrl}/api/user/profile`,
+        formData,
+        config
+      );
+
+      dispatch(setUserData(result.data));
+      setLoading(false);
+      navigate("/profile");
+      toast.success("Profile Updated Successfully");
+    } catch (error) {
+      setLoading(false);
+      console.log(error);
+      toast.error(error.response?.data?.message || "Something went wrong");
     }
-
-    const token = localStorage.getItem("token");
-    
-    const config = {
-      withCredentials: true,
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    };
-
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
-    const result = await axios.post(
-      `${serverUrl}/api/user/profile`,
-      formData,
-      config 
-    );
-
-    dispatch(setUserData(result.data));
-    setLoading(false);
-    navigate("/profile");
-    toast.success("Profile Updated Successfully");
-  } catch (error) {
-    setLoading(false);
-    console.log(error);
-    toast.error(error.response?.data?.message || "Something went wrong");
-  }
 };
 
   return (

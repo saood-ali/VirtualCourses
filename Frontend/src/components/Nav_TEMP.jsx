@@ -36,17 +36,19 @@ function Nav() {
 
   const handleLogOut = async () => {
     try {
-      await axios.get(`${serverUrl}/api/auth/logOut`, {
-        withCredentials: true,
-      });
-      dispatch(setUserData(null));
-      localStorage.removeItem("token"); 
-      toast.success("LogOut Successfully");
-      navigate("/");
-      setShowHam(false); 
+        // Attempt to tell server to delete cookie
+        await axios.get(`${serverUrl}/api/auth/logout`, {
+            withCredentials: true,
+        });
+        toast.success("LogOut Successfully");
     } catch (error) {
-      console.log(error);
-      toast.error(error.response?.data?.message || "Logout Failed");
+        console.log(error);
+    } finally {
+        // ✅ ALWAYS run this, whether server succeeds or fails
+        dispatch(setUserData(null));
+        localStorage.removeItem("token");
+        navigate("/");
+        setShowHam(false);
     }
   };
 

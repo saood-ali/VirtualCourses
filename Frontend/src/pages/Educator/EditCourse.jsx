@@ -1,15 +1,15 @@
-import React,{useEffect, useState} from "react";
+import {useEffect, useState} from "react";
 import { useRef } from "react";
 import { BsArrowReturnLeft } from "react-icons/bs";
 import { useNavigate, useParams } from "react-router-dom";
 import img from "../../assets/empty_folder.png";
 import { FaEdit } from "react-icons/fa";
 import axios from "axios";
-import { serverUrl } from "../../App";
+import { serverUrl } from "../../App.jsx";
 import { toast } from "react-toastify";
 import { ClipLoader } from "react-spinners";
 import { useDispatch, useSelector } from "react-redux";
-import { setCourseData } from "../../redux/courseSlice";
+import { setCourseData } from "../../redux/courseSlice.js";
 
 function EditCourse() {
   const navigate = useNavigate();
@@ -50,7 +50,7 @@ function EditCourse() {
       // This prevents the "cascading update" warning and saves a re-render
       if (courseData) {
         setTitle(courseData.title || "");
-        setSubTitle(courseData.subtitle || "");
+        setSubTitle(courseData.subTitle || "");
         setDescription(courseData.description || "");
         setCategory(courseData.category || "");
         setLevel(courseData.level || "");
