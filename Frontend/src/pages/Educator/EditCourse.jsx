@@ -69,21 +69,28 @@ function EditCourse() {
 
   const handleEditCourse = async () => {
     setLoading(true);
-    const formData = new FormData()
-    formData.append("title",title)
-    formData.append("subTitle",subTitle)
-    formData.append("description",description)
-    formData.append("category",category)
-    formData.append("level",level)
-    formData.append("price",price)
-    formData.append("courseImage",backendImage)
-    formData.append("isPublished",isPublished)
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("subTitle", subTitle);
+    formData.append("description", description);
+    formData.append("category", category);
+    formData.append("level", level);
+    formData.append("price", price);
+    formData.append("isPublished", isPublished);
+
+    if (backendImage) {
+      formData.append("courseImage", backendImage);
+    }
+
     try {
-      const result = await axios.post(`${serverUrl}/api/course/editcourse/${courseId}`, formData, {withCredentials:true});
-      console.log(result.data)
+      const result = await axios.post(
+        `${serverUrl}/api/course/editcourse/${courseId}`,
+        formData,
+        { withCredentials: true }
+      );
 
       const updateData = result.data;
-      if(updateData.isPublished){
+       if(updateData.isPublished){
         const updateCourses = courseData.map(c=>c._id === courseId? updateData : c)
         if(!courseData.some(c=>c._id === courseId))
         {
@@ -96,15 +103,16 @@ function EditCourse() {
         dispatch(setCourseData(filterCourses)) 
       }
 
-      setLoading(false)
-      navigate("/courses")
-      toast.success("Course Updated")
+      setLoading(false);
+      navigate("/courses");
+      toast.success(result.data.message || "Course Updated");
+
     } catch (error) {
-      console.log(error)
-      setLoading(false)
-      toast.error(error.response.data.message)
+      console.log(error);
+      setLoading(false);
+      toast.error(error.response?.data?.message || "Failed to update course");
     }
-  }
+  };
   
   const handleRemoveCourse = async () => {
     setLoading1(true);
