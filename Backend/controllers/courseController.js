@@ -3,6 +3,13 @@ import Lecture from "../models/lectureModel.js";
 import Course from "../models/courseModel.js";
 import User from "../models/userModel.js";
 
+const getPublicIdFromUrl = (url) => {
+    if (!url) return null;
+    const regex = /\/v\d+\/(.+)\.[a-z]+$/;
+    const match = url.match(regex);
+    return match ? match[1] : null; 
+};
+
 export const createCourse = async(req,res)=>{
     try {
         const {title, category} = req.body;
@@ -45,31 +52,40 @@ export const getCreatorCourses = async(req,res)=>{
     }
 }
 
-export const editCourse = async(req,res)=>{
+export const editCourse = async (req, res) => {
     try {
-        const {courseId} = req.params;
-        const {title, subTitle, description, category, level, isPublished, price} = req.body;
-        
+        const { courseId } = req.params;
+        const { title, subTitle, description, category, level, isPublished, price } = req.body;
+
         let course = await Course.findById(courseId);
-        if(!course){
-            return res.status(400).json({message:"Course not found"})
+        if (!course) {
+            return res.status(400).json({ message: "Course not found" });
         }
 
-        let thumbnail = course.thumbnail; 
+        let thumbnail = course.thumbnail;
 
-        if(req.file){
-            thumbnail = req.file.path; 
+        if (req.file) {
+            if (course.thumbnail) {
+                const publicId = getPublicIdFromUrl(course.thumbnail);
+                if (publicId) {
+                    await cloudinary.uploader.destroy(publicId);
+                }
+            }
+
+            const uploadResult = await uploadOnCloudinary(req.file.path);
+            thumbnail = uploadResult.secure_url;
         }
 
-        const updateData = {title, subTitle, description, category, level, isPublished, price, thumbnail}
-        
-        course = await Course.findByIdAndUpdate(courseId, updateData, {new:true})
-        return res.status(200).json(course)
+        const updateData = { title, subTitle, description, category, level, isPublished, price, thumbnail };
+
+        course = await Course.findByIdAndUpdate(courseId, updateData, { new: true });
+        return res.status(200).json(course);
+
     } catch (error) {
         console.log(error);
-        return res.status(500).json({message:`Edit course error ${error}`})
+        return res.status(500).json({ message: `Edit course error: ${error.message}` });
     }
-}
+};
 
 export const getCourseById = async(req,res)=>{
     try {
