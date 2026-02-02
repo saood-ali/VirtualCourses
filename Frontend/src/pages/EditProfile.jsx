@@ -4,7 +4,7 @@ import { BsArrowReturnLeft } from 'react-icons/bs';
 import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import { serverUrl } from '../App.jsx';
-import { setUserData } from '../redux/userSlice';
+import { setUserData } from '../redux/userSlice.js';
 import { toast } from 'react-toastify';
 import { ClipLoader } from 'react-spinners';
 

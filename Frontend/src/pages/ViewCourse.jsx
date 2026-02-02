@@ -1,13 +1,13 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { BsArrowReturnLeft } from 'react-icons/bs';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
-import { setSelectedCourse } from '../redux/courseSlice';
+import { setSelectedCourse } from '../redux/courseSlice.js';
 import img from "../assets/empty_folder.png";
 import { FaStar, FaPlayCircle, FaLock } from "react-icons/fa";
 import axios from 'axios';
-import { serverUrl } from '../App';
-import Card from '../components/Card';
+import { serverUrl } from '../App.jsx';
+import Card from '../components/Card.jsx';
 import { toast } from 'react-toastify';
 import { ClipLoader } from 'react-spinners';
 

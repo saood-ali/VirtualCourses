@@ -1,4 +1,3 @@
-import React from "react";
 import { SiViaplay } from "react-icons/si";
 import { TbDeviceDesktopAnalytics } from "react-icons/tb";
 import { FaUikit } from "react-icons/fa6";

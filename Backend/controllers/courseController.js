@@ -1,3 +1,4 @@
+import { v2 as cloudinary } from "cloudinary";
 import { uploadOnCloudinary } from "../config/cloudinary.js";
 import Lecture from "../models/lectureModel.js";
 import Course from "../models/courseModel.js";

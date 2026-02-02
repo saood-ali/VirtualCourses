@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { BsArrowReturnLeft } from "react-icons/bs";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { setUserData } from "../redux/userSlice";
-import { serverUrl } from "../App";
+import { setUserData } from "../redux/userSlice.js";
+import { serverUrl } from "../App.jsx";
 
 function Profile() {
   const { userData } = useSelector((state) => state.user);

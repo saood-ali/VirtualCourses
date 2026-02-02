@@ -4,7 +4,7 @@ import SignUp from './pages/SignUp.jsx';
 import Login from './pages/Login.jsx';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
-import getCurrentUser from './customHooks/getCurrentUser';
+// import getCurrentUser from './customHooks/getCurrentUser.js';
 import { useSelector } from 'react-redux'
 import Profile from './pages/Profile.jsx'
 import ForgetPassword from './pages/ForgetPassword.jsx'
@@ -28,7 +28,7 @@ export const serverUrl = "https://virtual-courses-two.vercel.app";
 
 
 function App() {
-  getCurrentUser();
+  // getCurrentUser();
   getCreatorCourse();
   getPublishedCourse();
   getAllReviews();

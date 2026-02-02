@@ -1,15 +1,14 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
-import { serverUrl } from "../App";
+import { serverUrl } from "../App.jsx";
 import {BsArrowReturnLeft} from 'react-icons/bs';
 import { FaPlayCircle } from "react-icons/fa";
 
 function ViewLectures() {
   const { courseId } = useParams();
   const { courseData } = useSelector((state) => state.course);
-  const { userData } = useSelector((state) => state.user);
   const selectedCourse = courseData?.find((course) => course._id === courseId);
   const navigate = useNavigate();
   const [creatorData, setCreatorData] = useState();

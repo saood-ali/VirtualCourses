@@ -1,4 +1,3 @@
-import React from 'react'
 import logo from "../assets/VC.png";
 import { useNavigate } from 'react-router-dom';
 function Footer() {

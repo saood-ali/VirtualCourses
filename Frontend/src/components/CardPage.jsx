@@ -1,5 +1,5 @@
 import { useSelector } from "react-redux";
-import Card from "./Card";
+import Card from "./Card.jsx";
 
 function CardPage() {
     const {courseData} = useSelector(state=>state.course);

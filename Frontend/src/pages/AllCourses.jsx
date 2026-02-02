@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
-import Nav from '../components/Nav_TEMP';
+import Nav from '../components/Nav_TEMP.jsx';
 import {BsArrowReturnLeft} from 'react-icons/bs';
 import { useNavigate } from 'react-router-dom';
 import ai from "../assets/ai_search_icon.png"
 import { useSelector } from 'react-redux';
-import Card from '../components/Card';
+import Card from '../components/Card.jsx';
 
 function AllCourses() {
     const navigate = useNavigate();

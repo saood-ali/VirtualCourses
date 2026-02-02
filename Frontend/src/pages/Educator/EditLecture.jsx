@@ -3,9 +3,9 @@ import React, { useState } from "react";
 import { BsArrowReturnLeft } from "react-icons/bs";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
-import { setLectureData } from "../../redux/lectureSlice";
+import { setLectureData } from "../../redux/lectureSlice.js";
 import { toast } from "react-toastify";
-import { serverUrl } from "../../App";
+import { serverUrl } from "../../App.jsx";
 import { ClipLoader } from "react-spinners";
 function EditLecture() {
     const {courseId, lectureId} = useParams();

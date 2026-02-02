@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import axios from 'axios';
 import { serverUrl } from '../App.jsx';
 import { useDispatch } from 'react-redux';
-import { setCourseData } from '../redux/courseSlice';
+import { setCourseData } from '../redux/courseSlice.js';
 
 const useGetPublishedCourse = () => {
     const dispatch = useDispatch();

@@ -9,9 +9,9 @@ import { serverUrl } from "../App.jsx";
 import { toast } from "react-toastify";
 import {ClipLoader} from "react-spinners";
 import { useDispatch } from "react-redux";
-import { setUserData } from "../redux/userSlice";
+import { setUserData } from "../redux/userSlice.js";
 import { signInWithPopup } from "firebase/auth";
-import { provider,auth } from "../utils/firebase";
+import { provider,auth } from "../utils/firebase.jsx";
 function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
