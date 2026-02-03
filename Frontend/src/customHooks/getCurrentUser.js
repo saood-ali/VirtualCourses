@@ -9,7 +9,17 @@ const useGetCurrentUser = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const result = await axios.get(`${serverUrl}/api/user/getCurrentUser`,{withCredentials:true})
+        const result = await axios.get(
+          `${serverUrl}/api/user/getCurrentUser?t=${new Date().getTime()}`, 
+          {
+            withCredentials: true,
+            headers: {
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+            }
+          }
+        );
         dispatch(setUserData(result.data))
       } catch (error) {
         console.log(error)

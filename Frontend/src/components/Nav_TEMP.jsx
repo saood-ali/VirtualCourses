@@ -37,7 +37,7 @@ function Nav() {
   const handleLogOut = async () => {
     try {
         // Attempt to tell server to delete cookie
-        await axios.get(`${serverUrl}/api/auth/logout`, {
+        await axios.post(`${serverUrl}/api/auth/logout`, {
             withCredentials: true,
         });
         toast.success("LogOut Successfully");
