@@ -60,21 +60,19 @@ export const editCourse = async (req, res) => {
 
         let course = await Course.findById(courseId);
         if (!course) {
-            return res.status(400).json({ message: "Course not found" });
+            return res.status(404).json({ message: "Course not found" });
         }
 
         let thumbnail = course.thumbnail;
 
         if (req.file) {
             if (course.thumbnail) {
-                const publicId = getPublicIdFromUrl(course.thumbnail);
-                if (publicId) {
-                    await cloudinary.uploader.destroy(publicId);
-                }
+                 const publicId = getPublicIdFromUrl(course.thumbnail);
+                 if (publicId) {
+                     await cloudinary.uploader.destroy(publicId);
+                 }
             }
-
-            const uploadResult = await uploadOnCloudinary(req.file.path);
-            thumbnail = uploadResult.secure_url;
+            thumbnail = req.file.path; 
         }
 
         const updateData = { title, subTitle, description, category, level, isPublished, price, thumbnail };
@@ -84,7 +82,7 @@ export const editCourse = async (req, res) => {
 
     } catch (error) {
         console.log(error);
-        return res.status(500).json({ message: `Edit course error: ${error.message}` });
+        return res.status(500).json({ message: `Edit course error ${error.message}` });
     }
 };
 

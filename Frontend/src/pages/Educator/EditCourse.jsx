@@ -67,7 +67,7 @@ function EditCourse() {
   
 }, [courseId]);
 
-  const handleEditCourse = async () => {
+ const handleEditCourse = async () => {
     setLoading(true);
     const formData = new FormData();
     formData.append("title", title);
@@ -90,17 +90,19 @@ function EditCourse() {
       );
 
       const updateData = result.data;
-       if(updateData.isPublished){
-        const updateCourses = courseData.map(c=>c._id === courseId? updateData : c)
-        if(!courseData.some(c=>c._id === courseId))
-        {
-          updateCourses.push(updateData)
+      const currentCourses = courseData || []; 
+
+      if(updateData.isPublished){
+        const updateCourses = currentCourses.map(c => c._id === courseId ? updateData : c);
+        
+        if(!currentCourses.some(c => c._id === courseId)) {
+          updateCourses.push(updateData);
         }
-        dispatch(setCourseData(updateCourses))
+        dispatch(setCourseData(updateCourses));
       }
-      else{
-        const filterCourses = courseData.filter(c=>c._id !== courseId)
-        dispatch(setCourseData(filterCourses)) 
+      else {
+        const filterCourses = currentCourses.filter(c => c._id !== courseId);
+        dispatch(setCourseData(filterCourses)); 
       }
 
       setLoading(false);
