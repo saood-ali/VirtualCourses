@@ -16,7 +16,7 @@ const getPublicIdFromUrl = (url) => {
 
 export const getCurrentUser = async(req,res)=>{
     try {
-        const user = await User.findById(req.UserID).select("-password").populate("enrolledCourses");
+        const user = await User.findById(req.id).select("-password").populate("enrolledCourses");
         if(!user){
             return res.status(400).json({message:"User not found"})
         }
@@ -28,7 +28,7 @@ export const getCurrentUser = async(req,res)=>{
 
 export const updateProfile = async(req,res)=>{
     try {
-        const userId = req.UserID;
+        const userId = req.id;
         const {name, description} = req.body;
         
         const user = await User.findById(userId);
