@@ -99,19 +99,24 @@ export const getCourseById = async(req,res)=>{
     }
 }
 
-export const removeCourse = async(req,res)=>{
+export const removeCourse = async (req, res) => {
     try {
-        const {courseId} = req.params;
-        let course = await Course.findById(courseId)
-        if(!course){
-            return res.status(400).json({message:"Course not found"})
+        const { courseId } = req.params;
+        
+        const course = await Course.findById(courseId);
+        
+        if (!course) {
+            return res.status(404).json({ message: "Course not found" });
         }
-        course = await findByIdAndDelete(courseId, {new:true})
-        return res.status(200).json({message:"Course deleted successfully"})
+
+        await Course.findByIdAndDelete(courseId);
+
+        return res.status(200).json({ message: "Course deleted successfully" });
+
     } catch (error) {
-        return res.status(500).json({message:`Remove course error ${error}`})
+        return res.status(500).json({ message: `Remove course error ${error}` });
     }
-}
+};
 
 //For Lecture
 export const createLecture = async(req,res)=>{

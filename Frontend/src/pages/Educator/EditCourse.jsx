@@ -119,7 +119,7 @@ function EditCourse() {
   const handleRemoveCourse = async () => {
     setLoading1(true);
     try {
-      const result = await axios.delete(`${serverUrl}/api/course/removecourse/${courseId}`,{withCredentials:true});
+      const result = await axios.delete(`${serverUrl}/api/course/remove/${courseId}`,{withCredentials:true});
       console.log(result.data);
       const filterCourses = courseData.filter(c=>c._id!==courseId);
       dispatch(setCourseData(filterCourses));
