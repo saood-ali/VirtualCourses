@@ -19,7 +19,7 @@ function Home() {
   return (
     <div className="w-full overflow-hidden relative">
       
-      {/* 2. BACKGROUND PATTERN:  cover entire page */}
+      {/* 2. BACKGROUND PATTERN: Cover entire page */}
       <DotPattern 
         width={20} 
         height={20} 
@@ -30,7 +30,12 @@ function Home() {
       />
 
       <div className="w-full lg:h-[140vh] h-[70vh] relative z-10">
-        <Nav /> 
+        
+        {/* FIX: Wrapped Nav in relative z-50 to ensure it stays on top of the absolute elements below */}
+        <div className="relative z-50">
+          <Nav /> 
+        </div>
+
         <img src={home_page} alt="home_page" 
         className="object-cover md:object-fill w-full lg:h-full h-[50vh]"/>
 
@@ -86,7 +91,7 @@ function Home() {
         </div>
       </div>
 
-      {/* 4. Other Sections: Wrapped in relative z-10 to ensure transparency works correctly over dots */}
+      {/* 4. Other Sections */}
       <div className="relative z-10">
         <Logos/>
         <ExploreCourses/> 
