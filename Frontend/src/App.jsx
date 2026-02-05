@@ -51,6 +51,7 @@ function App() {
         <Route path='/editcourse/:courseId' element={userData?.role === "educator"? <EditCourse/> : <Navigate to={"/signup"}/>} />
         <Route path='/createlecture/:courseId' element={userData?.role === "educator"? <CreateLecture/> : <Navigate to={"/signup"}/>} />
         <Route path='/editlecture/:courseId/:lectureId' element={userData?.role === "educator"? <EditLecture/> : <Navigate to={"/signup"}/>} />
+        <Route path='/course/:courseId' element={<ViewCourse/>} />
         <Route path='/viewcourse/:courseId' element={userData ? <ViewCourse/> : <Navigate to={"/signup"}/>} />
         <Route path='/viewlecture/:courseId' element={userData ? <ViewLectures/> : <Navigate to={"/signup"}/>} />
         <Route path='/mycourses' element={userData ? <MyEnrolledCourses/> : <Navigate to={"/signup"}/>} />
