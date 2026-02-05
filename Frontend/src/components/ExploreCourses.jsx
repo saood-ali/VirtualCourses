@@ -8,6 +8,7 @@ import { SiGoogledataproc } from "react-icons/si";
 import { BsClipboardDataFill } from "react-icons/bs";
 import { SiOpenaigym } from "react-icons/si";
 import { useNavigate } from "react-router-dom";
+import ElectricBorder from "./ElectricBorder.jsx";
 
 function ExploreCourses() {
   const navigate = useNavigate();
@@ -19,19 +20,36 @@ function ExploreCourses() {
     >
       {/* left/top div */}
       <div
-        className="w-full lg:w-[350px] lg:h-full h-[400px]
+      className="w-full lg:w-[350px] lg:h-full h-[400px]
       flex flex-col items-start justify-center gap-1 md:px-[40px]
       px-[20px]"
-      >
-        <span className="text-[35px] font-semibold">Explore</span>
-        <span className="text-[35px] font-semibold">Our Courses</span>
-        <p className="text-[17px] "></p>
-        <button className="px-[20px] py-[10px] border-2 bg-[black] 
-        border-white text-white rounded-[10px] text-[18px] font-light
-        flex gap-2 mt-[40px] cursor-pointer" onClick={()=>navigate("/allcourses")}>Explore Courses
-          <SiViaplay className="w-[30px] h-[30px] lg:fill-white fill-black"/>
-        </button>
+    >
+      <span className="text-[35px] font-semibold">Explore</span>
+      <span className="text-[35px] font-semibold">Our Courses</span>
+      <p className="text-[17px] "></p>
+      
+      {/* 2. Wrap the button with ElectricBorder */}
+      <div className="mt-[40px]"> {/* Moved margin here to separate border from text above */}
+        <ElectricBorder
+          color="#04000f"    // Dark blue color from your screenshot
+          speed={2}          // Adjust speed
+          chaos={0.05}       // Low chaos for a stable look
+          thickness={2}      // Border thickness
+          borderRadius={10}  // Matches the button's rounded-[10px]
+        >
+          <button
+            className="px-[20px] py-[10px] bg-black 
+            text-white rounded-[10px] text-[18px] font-light
+            flex gap-2 cursor-pointer items-center" 
+            onClick={() => navigate("/allcourses")}
+          >
+            Explore Courses
+            <SiViaplay className="w-[30px] h-[30px] fill-white" />
+          </button>
+        </ElectricBorder>
       </div>
+
+    </div>
 
       {/* right/bottom div */}
       <div className="w-[720px] max-w-[90%] lg:h-[300px] md:min-h-[300px] 

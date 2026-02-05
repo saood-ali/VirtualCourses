@@ -45,7 +45,7 @@ function CreateLecture() {
      }
     }
     getCourseLecture()
-  },[])
+  },[courseId, dispatch])
   return (
     <div className='min-h-screen bg-gray-100 flex items-center justify-center p-4'>
      <div className='bg-white shadow-xl rounded-xl w-full max-w-2xl p-6'>
