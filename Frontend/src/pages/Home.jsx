@@ -11,31 +11,58 @@ import Footer from "../components/Footer.jsx";
 import About from "../components/About.jsx";
 import ReviewPage from "../components/ReviewPage.jsx";
 import ElectricBorder from "../components/ElectricBorder.jsx"; 
+import BlurText from "../components/BlurText.jsx";
+import { DotPattern } from "../components/DotPattern.jsx"; 
 
 function Home() {
   const navigate = useNavigate();
   return (
-    <div className="w-full overflow-hidden">
-      <div className="w-full lg:h-[140vh] h-[70vh] relative">
+    <div className="w-full overflow-hidden relative">
+      
+      {/* 2. BACKGROUND PATTERN:  cover entire page */}
+      <DotPattern 
+        width={20} 
+        height={20} 
+        cx={1} 
+        cy={1} 
+        cr={1} 
+        className="fixed inset-0 h-full w-full fill-gray-300/40 -z-10" 
+      />
+
+      <div className="w-full lg:h-[140vh] h-[70vh] relative z-10">
         <Nav /> 
         <img src={home_page} alt="home_page" 
         className="object-cover md:object-fill w-full lg:h-full h-[50vh]"/>
 
-        <span className="lg:text-[70px] absolute md:text-[40px] 
-        lg:top-[10%] top-[15%] w-full flex items-center justify-center">
-        Grow your skills to advance</span>
+        {/* "Grow your skills to advance" */}
+        <div className="absolute lg:top-[10%] top-[15%] w-full flex items-center justify-center">
+          <BlurText
+            text="Grow your skills to advance"
+            delay={50}
+            animateBy="letters"
+            direction="bottom"
+            className="lg:text-[70px] text-[25px] md:text-[40px] text-[#5f7363]"
+          />
+        </div>
         
-        <span className="lg:text-[70px] text-[20px] md:text-[40px]
-        absolute lg:top-[18%] top-[20%] w-full flex items-center
-        justify-center text-white font-bold">Your career path</span>
+        {/* "Your career path" */}
+        <div className="absolute lg:top-[18%] top-[20%] w-full flex items-center justify-center">
+          <BlurText
+            text="Your career path"
+            delay={100} 
+            animateBy="letters"
+            direction="top"
+            className="lg:text-[70px] text-[20px] md:text-[40px] text-white font-bold"
+          />
+        </div>
 
         <div className="absolute lg:top-[30%] top-[75%] md:top-[80%] w-full
         flex items-center justify-center gap-3 flex-wrap">
           
           <ElectricBorder 
-            color="#FFFFFF" 
-            speed={2} 
-            chaos={0.1} 
+            color="#7df9ff" 
+            speed={2.9} 
+            chaos={0.05} 
             borderRadius={10}
           >
             <button 
@@ -57,14 +84,17 @@ function Home() {
           <img src={ai1} alt="ai1_icon" className="w-[35px] h-[35px] rounded-full lg:hidden"/>
           </button>
         </div>
-        
       </div>
-      <Logos/>
-      <ExploreCourses/> 
-      <CardPage/>
-      <About/>
-      <ReviewPage/>
-      <Footer/>
+
+      {/* 4. Other Sections: Wrapped in relative z-10 to ensure transparency works correctly over dots */}
+      <div className="relative z-10">
+        <Logos/>
+        <ExploreCourses/> 
+        <CardPage/>
+        <About/>
+        <ReviewPage/>
+        <Footer/>
+      </div>
     </div>
   );
 }

@@ -31,10 +31,10 @@ function ExploreCourses() {
       {/* 2. Wrap the button with ElectricBorder */}
       <div className="mt-[40px]"> {/* Moved margin here to separate border from text above */}
         <ElectricBorder
-          color="#04000f"    // Dark blue color from your screenshot
-          speed={2}          // Adjust speed
+          color="#FFD700"    // Dark blue color from your screenshot
+          speed={2.9}          // Adjust speed
           chaos={0.05}       // Low chaos for a stable look
-          thickness={2}      // Border thickness
+          thickness={5}      // Border thickness
           borderRadius={10}  // Matches the button's rounded-[10px]
         >
           <button
