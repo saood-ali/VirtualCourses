@@ -4,7 +4,7 @@ import SignUp from './pages/SignUp.jsx';
 import Login from './pages/Login.jsx';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
-import getCurrentUser from './customHooks/getCurrentUser.js';
+import useGetCurrentUser from './customHooks/getCurrentUser.js';
 import { useSelector } from 'react-redux'
 import Profile from './pages/Profile.jsx'
 import ForgetPassword from './pages/ForgetPassword.jsx'
@@ -12,9 +12,9 @@ import EditProfile from './pages/EditProfile.jsx'
 import Dashboard from './pages/Educator/Dashboard.jsx'
 import Courses from './pages/Educator/Courses.jsx'
 import CreateCourses from './pages/Educator/CreateCourses.jsx'
-import getCreatorCourse from './customHooks/getCreatorCourse.js'
+import useGetCreatorCourse from './customHooks/getCreatorCourse.js'
 import EditCourse from './pages/Educator/EditCourse.jsx'
-import getPublishedCourse from './customHooks/getPublishedCourse.js'
+import useGetPublishedCourse from './customHooks/getPublishedCourse.js'
 import AllCourses from './pages/AllCourses.jsx'
 import CreateLecture from './pages/Educator/CreateLecture.jsx'
 import EditLecture from './pages/Educator/EditLecture.jsx'
@@ -22,16 +22,16 @@ import ViewCourse from './pages/ViewCourse.jsx'
 import ScrollToTop from './components/ScrollToTop.jsx'
 import ViewLectures from './pages/ViewLectures.jsx'
 import MyEnrolledCourses from './pages/MyEnrolledCourses.jsx'
-import getAllReviews from './customHooks/getAllReviews.js'
+import useGetAllReviews from './customHooks/getAllReviews.js'
 import SearchWithAi from './pages/SearchWithAi.jsx'
 export const serverUrl = "https://virtual-courses-two.vercel.app";
 
 
 function App() {
-  getCurrentUser();
-  getCreatorCourse();
-  getPublishedCourse();
-  getAllReviews();
+  useGetCurrentUser();
+  useGetCreatorCourse();
+  useGetPublishedCourse();
+  useGetAllReviews();
   const {userData} = useSelector(state=>state.user)
   return (
     <div>

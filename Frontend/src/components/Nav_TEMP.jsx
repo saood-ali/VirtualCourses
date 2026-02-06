@@ -36,21 +36,21 @@ function Nav() {
 
   const handleLogOut = async () => {
     try {
-        // Attempt to tell server to delete cookie
-        await axios.post(`${serverUrl}/api/auth/logout`, {
-            withCredentials: true,
-        });
+        await axios.post(
+            `${serverUrl}/api/auth/logout`,
+            {},
+            { withCredentials: true } 
+        );
         toast.success("LogOut Successfully");
     } catch (error) {
         console.log(error);
     } finally {
-        // ✅ ALWAYS run this, whether server succeeds or fails
         dispatch(setUserData(null));
         localStorage.removeItem("token");
         navigate("/");
         setShowHam(false);
     }
-  };
+};
 
   return (
     <div>

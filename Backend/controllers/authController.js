@@ -143,26 +143,34 @@ export const resetPassword = async (req,res) => {
     }
 }
 
-export const googleAuth = async (req,res) => {
+export const googleAuth = async (req, res) => {
     try {
-        const {name, email, role} = req.body;
-        const user = await User.findOne({email});
-        if(!user){
+        const { name, email, role } = req.body;
+        
+        let user = await User.findOne({ email });
+
+        if (!user) {
             user = await User.create({
                 name,
                 email,
-                role
-            }) 
+                role,
+                password: Math.random().toString(36).slice(-8) + "googleAuth" 
+            });
         }
+
         let token = await generateToken(user._id);
-        res.cookie("token",token,{
-            httpOnly:true,
-            secure:true,
-            sameSite:"none",
-            maxAge:1000*60*60*24*7,
-        })
-        return res.status(200).json(user) 
+        
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+            maxAge: 1000 * 60 * 60 * 24 * 7,
+        });
+
+        return res.status(200).json(user);
+
     } catch (error) {
-        return res.status(500).json({message:`GoogleAuth error ${error.message}`})
+        console.log(error); 
+        return res.status(500).json({ message: `GoogleAuth error ${error.message}` });
     }
-}
+};
