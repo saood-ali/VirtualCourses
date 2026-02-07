@@ -3,8 +3,10 @@ import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom';
 import {BsArrowReturnLeft} from 'react-icons/bs';
 import {Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
+import useGetCreatorCourse from '../../customHooks/getCreatorCourse.js';
 
 function Dashboard() {
+  useGetCreatorCourse();
   const {userData} = useSelector(state=>state.user);
   const navigate = useNavigate();
   const { creatorCourseData } = useSelector(state=>state.course);

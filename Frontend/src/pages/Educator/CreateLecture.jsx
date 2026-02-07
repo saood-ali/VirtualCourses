@@ -22,16 +22,17 @@ function CreateLecture() {
   const handleCreateLecture = async () => {
     setLoading(true);
     try {
-      const result = await axios.post(`${serverUrl}/api/course/createlecture/${courseId}`, {lectureTitle},{withCredentials:true});
+      const result = await axios.post(`${serverUrl}/api/course/createlecture/${courseId}`, {lectureTitle}, {withCredentials:true});
       console.log(result.data);
-      dispatch(setLectureData([...lectureData,result.data.lecture])) 
+      dispatch(setLectureData([...(lectureData || []), result.data.lecture]));
       setLoading(false);
-      toast.success("Lecture Created")
-      setLectureTitle("")
+      toast.success("Lecture Created");
+      setLectureTitle("");
     } catch (error) {
-      console.log(error)
-      setLoading(false)
-      toast.error(error.response.data.message)
+      console.log(error);
+      setLoading(false);
+      const errorMessage = error.response?.data?.message || "Something went wrong";
+      toast.error(errorMessage);
     }
   }
 
