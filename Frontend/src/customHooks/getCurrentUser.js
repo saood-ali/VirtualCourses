@@ -1,16 +1,17 @@
 import { useEffect } from "react";
 import axios from "axios";
-import serverUrl from "../App.jsx";
+import { serverUrl } from "../App.jsx"; 
 import { useDispatch } from "react-redux";
-import {setUserData} from "../redux/userSlice.js";
+import { setUserData } from "../redux/userSlice.js";
 
 const useGetCurrentUser = () => {
   const dispatch = useDispatch();
+
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const result = await axios.get(
-          `${serverUrl}/api/user/getCurrentUser?t=${new Date().getTime()}`, 
+          `${serverUrl}/api/user/getCurrentUser?t=${new Date().getTime()}`,
           {
             withCredentials: true,
             headers: {
@@ -20,13 +21,22 @@ const useGetCurrentUser = () => {
             }
           }
         );
-        dispatch(setUserData(result.data))
+        
+        if (result.data && typeof result.data === 'object') {
+             dispatch(setUserData(result.data));
+        } else {
+             throw new Error("Invalid user data received");
+        }
+
       } catch (error) {
-        console.log(error)
+        console.log("Auto-login failed:", error);
+        
+        localStorage.removeItem("token"); 
+        
         dispatch(setUserData(null));
       }
     };
-    fetchUser()
+    fetchUser();
   }, [dispatch]);
 };
 

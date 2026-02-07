@@ -19,7 +19,13 @@ function Home() {
   return (
     <div className="w-full overflow-hidden relative">
       
-      {/* 2. BACKGROUND PATTERN: Cover entire page */}
+      {/* ✅ FIX 3: Nav is now at the ROOT level.
+         This releases it from the z-index trap of the hero section below.
+         Combined with z-[999], it will float over everything.
+      */}
+      <Nav />
+
+      {/* BACKGROUND PATTERN */}
       <DotPattern 
         width={20} 
         height={20} 
@@ -31,10 +37,7 @@ function Home() {
 
       <div className="w-full lg:h-[140vh] h-[70vh] relative z-10">
         
-        {/* FIX: Wrapped Nav in relative z-50 to ensure it stays on top of the absolute elements below */}
-        <div className="relative z-50">
-          <Nav /> 
-        </div>
+        {/* Nav Removed from here */}
 
         <img src={home_page} alt="home_page" 
         className="object-cover md:object-fill w-full lg:h-full h-[50vh]"/>
