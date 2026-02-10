@@ -14,7 +14,7 @@ const useGetCreatorCourse = () => {
                     withCredentials: true
                 });
                 console.log("Fetched Creator Data:", result.data);
-                dispatch(setCreatorCourseData(result.data.courses));
+                dispatch(setCreatorCourseData(result.data));
             } catch (error) {
                 console.log("Could not fetch creator courses:", error);
             }
