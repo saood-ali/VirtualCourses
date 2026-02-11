@@ -1,22 +1,23 @@
 import { useState } from "react";
 import { BsArrowReturnLeft } from "react-icons/bs";
 import { useNavigate } from "react-router-dom";
-import  axios  from "axios";
+import axios from "axios";
 import { serverUrl } from "../../App.jsx";
 import { toast } from "react-toastify";
 import { ClipLoader } from "react-spinners";
+import { DotPattern } from "../../components/DotPattern.jsx";
 
 function CreateCourses() {
   const navigate = useNavigate();
-  const [title,setTitle] = useState("");
-  const [category,setCategory] = useState("");
-  const [loading,setLoading] = useState(false);
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleCreateCourse = async()=>{
+  const handleCreateCourse = async () => {
     setLoading(true);
     try {
-      const result = await axios.post(`${serverUrl}/api/course/create`, 
-        {title, category}, {withCredentials: true})
+      const result = await axios.post(`${serverUrl}/api/course/create`,
+        { title, category }, { withCredentials: true })
       console.log(result.data);
       navigate("/courses")
       setLoading(false)
@@ -27,20 +28,33 @@ function CreateCourses() {
       toast.error(error.response.data.message)
     }
   }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4 py-10">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-10 relative overflow-hidden">
+      
+      {/* THE FIX */}
+      <DotPattern 
+        className="absolute inset-0 z-0 text-gray-400 opacity-50" 
+        width={16} 
+        height={16} 
+        cx={1} 
+        cy={1} 
+        cr={1} 
+      />
+
+      {/* The Card:*/}
       <div
         className="max-w-xl w-[600px] mx-auto p-6 bg-white 
-    shadow-md rounded-md mt-10 relative"
+     shadow-xl rounded-md mt-10 relative z-10"
       >
         <BsArrowReturnLeft
-          className="top-[8%] left-[5%] absolute w-[22px] h-[22px] cursor-pointer"
+          className="top-[8%] left-[5%] absolute w-[22px] h-[22px] cursor-pointer hover:scale-110 transition-transform"
           onClick={() => navigate("/")}
         />
         <h2 className="text-2xl font-semibold mb-6 text-center">
           Create Course
         </h2>
-        <form className="space-y-5" onSubmit={(e)=>e.preventDefault()}>
+        <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
           <div>
             <label
               htmlFor="title"
@@ -54,7 +68,7 @@ function CreateCourses() {
               id="title"
               placeholder="Enter Course Title"
               className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none
-            focus:ring-2 focus:ring-[black]" onChange={(e)=>setTitle(e.target.value)} value={title}
+            focus:ring-2 focus:ring-[black]" onChange={(e) => setTitle(e.target.value)} value={title}
             />
           </div>
           <div>
@@ -69,7 +83,7 @@ function CreateCourses() {
               name=""
               id=""
               className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none
-          focus:ring-2 focus:ring-[black]" onChange={(e)=>setCategory(e.target.value)}
+          focus:ring-2 focus:ring-[black]" onChange={(e) => setCategory(e.target.value)}
             >
               <option value="">Select Category</option>
               <option value="App Development">App Development</option>
@@ -84,8 +98,8 @@ function CreateCourses() {
             </select>
           </div>
           <button className="w-full bg-[black] text-white py-2 px-4 
-          rounded-md active:bg-[#3a3a3a] transition" disabled={loading} onClick={handleCreateCourse}>
-            {loading? <ClipLoader size={30} color="white"/>:"Create"}
+          rounded-md active:bg-[#3a3a3a] transition shadow-md hover:shadow-lg" disabled={loading} onClick={handleCreateCourse}>
+            {loading ? <ClipLoader size={30} color="white" /> : "Create"}
           </button>
         </form>
       </div>
