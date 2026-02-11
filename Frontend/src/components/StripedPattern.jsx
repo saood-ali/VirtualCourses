@@ -10,42 +10,44 @@ function cn(...inputs) {
 export function StripedPattern({
   width = 40,
   height = 40,
-  direction = "left",
+  x = 0, // Added default value
+  y = 0, // Added default value
   className,
   ...props
 }) {
   const id = useId();
-  const w = Number(width);
-  const h = Number(height);
 
   return (
     <svg
       aria-hidden="true"
       className={cn(
-        "pointer-events-none absolute inset-0 z-0 h-full w-full stroke-neutral-200/50 stroke-[1]",
+        "pointer-events-none absolute inset-0 h-full w-full fill-neutral-100 stroke-neutral-200",
         className
       )}
-      xmlns="http://www.w3.org/2000/svg"
       {...props}
     >
       <defs>
-        <pattern id={id} width={w} height={h} patternUnits="userSpaceOnUse">
-          {direction === "left" ? (
-            <>
-              <line x1="0" y1={h} x2={w} y2="0" stroke="currentColor" />
-              <line x1={-w} y1={h} x2="0" y2="0" stroke="currentColor" />
-              <line x1={w} y1={h} x2={w * 2} y2="0" stroke="currentColor" />
-            </>
-          ) : (
-            <>
-              <line x1="0" y1="0" x2={w} y2={h} stroke="currentColor" />
-              <line x1={-w} y1="0" x2="0" y2={h} stroke="currentColor" />
-              <line x1={w} y1="0" x2={w * 2} y2={h} stroke="currentColor" />
-            </>
-          )}
+        <pattern
+          id={id}
+          width={width}
+          height={height}
+          patternUnits="userSpaceOnUse"
+          patternContentUnits="userSpaceOnUse"
+          x={x}
+          y={y}
+        >
+          {/* This path draws a diagonal line from bottom-left to top-right */}
+          <path
+            d={`M0 ${height}L${width} 0`}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1"
+          />
         </pattern>
       </defs>
-      <rect width="100%" height="100%" fill={`url(#${id})`} />
+      <rect width="100%" height="100%" strokeWidth={0} fill={`url(#${id})`} />
     </svg>
   );
 }
+
+export default StripedPattern;
