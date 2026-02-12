@@ -8,10 +8,10 @@ import userRouter from "./routes/userRoute.js";
 import courseRouter from "./routes/courseRoute.js";
 import paymentRouter from "./routes/paymentRoute.js";
 import reviewRouter from "./routes/reviewRoute.js";
+import uploadRouter from "./routes/uploadRoute.js";
 
 dotenv.config({ quiet: true });
 
-//Connect to DB immediately (so it works in Vercel)
 connectDb(); 
 
 const app = express();
@@ -32,6 +32,7 @@ app.use("/api/user", userRouter);
 app.use("/api/course", courseRouter);
 app.use("/api/order", paymentRouter);
 app.use("/api/review", reviewRouter);
+app.use("/api/upload", uploadRouter);
 
 app.get("/", (req, res) => {
     res.send("Hello from server");
