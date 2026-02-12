@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import ai from "../assets/ai_search_icon.png";
 import { useSelector } from 'react-redux';
 import TiltedCard from '../components/TiltedCard.jsx';
-import { FlickeringGrid } from '../components/FlickeringGrid.jsx'; // 1. Import Grid
+import { FlickeringGrid } from '../components/FlickeringGrid.jsx'; 
 
 function AllCourses() {
   const navigate = useNavigate();
@@ -38,9 +38,9 @@ function AllCourses() {
         className="fixed inset-0 z-0 h-full w-full"
         squareSize={6}
         gridGap={6}
-        color="#455060" 
+        color="#105070" 
         maxOpacity={0.15}
-        flickerChance={0.1}
+        flickerChance={0.7}
         height={window.innerHeight}
       />
 

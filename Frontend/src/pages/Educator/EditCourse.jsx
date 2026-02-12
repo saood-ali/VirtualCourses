@@ -136,19 +136,19 @@ function EditCourse() {
   return (
     <div className="min-h-screen relative w-full overflow-hidden bg-gray-50 flex justify-center py-10 px-4">
       
-      {/* FLICKERING GRID*/}
-      <div className="absolute inset-0 -z-10">
+      {/*  FLICKERING GRID */}
+      <div className="absolute inset-0 z-0">
         <FlickeringGrid
-          className="absolute inset-0 size-full"
+          className="w-full h-full" 
           squareSize={4}
           gridGap={6}
-          color="#f0E000"     
-          maxOpacity={0.2}    
-          flickerChance={0.3}
-          height={1200}       
+          color="#2E2E2E"    
+          maxOpacity={0.15}   
+          flickerChance={0.7}
         />
       </div>
 
+      {/*  Main Content Card */}
       <div className="max-w-5xl w-full bg-white/95 backdrop-blur-sm rounded-lg shadow-md p-6 relative z-10">
         
         {/* Top Bar */}

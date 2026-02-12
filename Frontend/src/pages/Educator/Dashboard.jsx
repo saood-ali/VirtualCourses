@@ -11,7 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import useGetCreatorCourse from "../../customHooks/getCreatorCourse.js";
-import { StripedPattern } from "../../components/StripedPattern.jsx";
+import { FlickeringGrid } from "../../components/FlickeringGrid.jsx";
 
 function Dashboard() {
   useGetCreatorCourse();
@@ -41,7 +41,8 @@ function Dashboard() {
     }, 0) || 0;
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-50">
+      
       {/* Back Button */}
       <BsArrowReturnLeft
         className="w-[22px] absolute top-[10%] left-[10%] h-[22px] cursor-pointer z-50"
@@ -50,13 +51,19 @@ function Dashboard() {
 
       {/* 2. Main Content Container */}
       <div className="w-full px-6 py-10 relative overflow-hidden space-y-10 min-h-screen">
-        <StripedPattern
-          width={32}
-          height={32}
-          x={-1}
-          y={-1}
-          className="absolute inset-0 z-0 h-full w-full text-gray-400/30"
-        />
+        
+        {/* 3. FLICKERING GRID BACKGROUND */}
+        <div className="absolute inset-0 z-0">
+          <FlickeringGrid
+            className="w-full h-full"
+            squareSize={4}
+            gridGap={6}
+            color="#300909"      
+            maxOpacity={0.15}    
+            flickerChance={0.7}
+            height={1200}        
+          />
+        </div>
 
         {/* Welcome Card */}
         <div className="max-w-5xl mx-auto bg-white/90 backdrop-blur-sm rounded-xl shadow-md p-6 flex flex-col md:flex-row items-center gap-6 relative z-10">
