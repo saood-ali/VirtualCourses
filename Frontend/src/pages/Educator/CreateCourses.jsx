@@ -49,7 +49,7 @@ function CreateCourses() {
       >
         <BsArrowReturnLeft
           className="top-[8%] left-[5%] absolute w-[22px] h-[22px] cursor-pointer hover:scale-110 transition-transform"
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/courses")}
         />
         <h2 className="text-2xl font-semibold mb-6 text-center">
           Create Course
