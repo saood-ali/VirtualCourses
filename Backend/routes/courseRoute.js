@@ -18,7 +18,7 @@ courseRouter.delete("/remove/:courseId",isAuth,removeCourse);
 //for lectures
 courseRouter.post("/createlecture/:courseId",isAuth,createLecture);
 courseRouter.get("/courselecture/:courseId",isAuth,getCourseLecture);
-courseRouter.post("/editlecture/:lectureId",isAuth,upload.single("videoUrl"),editLecture);
+courseRouter.post("/editlecture/:lectureId",isAuth,editLecture);
 courseRouter.delete("/removelecture/:lectureId",isAuth,removeLecture);
 courseRouter.post("/creator",isAuth,getCreatorById);
 
