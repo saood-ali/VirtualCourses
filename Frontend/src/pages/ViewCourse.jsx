@@ -10,7 +10,7 @@ import { serverUrl } from '../App.jsx';
 import Card from '../components/Card.jsx';
 import { toast } from 'react-toastify';
 import { ClipLoader } from 'react-spinners';
-import { StripedPattern } from '../components/StripedPattern.jsx'; // 1. Import the Pattern
+import { StripedPattern } from '../components/StripedPattern.jsx'; 
 
 function ViewCourse() {
   const navigate = useNavigate();
@@ -20,12 +20,21 @@ function ViewCourse() {
   const dispatch = useDispatch();
   const [selectedLecture, setSelectedLecture] = useState(null);
   const [creatorData, setCreatorData] = useState(null);
-  
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [prevCourseId, setPrevCourseId] = useState(courseId);
+  if (courseId !== prevCourseId) {
+    setPrevCourseId(courseId);
+    setSelectedLecture(null);
+  }
 
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Scroll to Top on navigation
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [courseId]);
 
   const isAlreadyEnrolled = userData?.enrolledCourses?.some((c) =>
     (typeof c === "string" ? c : c._id).toString() === courseId?.toString()
@@ -33,14 +42,14 @@ function ViewCourse() {
 
   const isEnrolled = isAlreadyEnrolled || paymentSuccess;
 
-
+  // Robust Data Syncing
   useEffect(() => {
-    if (courseData && courseId) {
+    if (courseData && courseData.length > 0) {
       const foundCourse = courseData.find((course) => course._id === courseId);
       if (foundCourse) {
         dispatch(setSelectedCourse(foundCourse));
       }
-    }
+    } 
   }, [courseData, courseId, dispatch]);
 
   // Handle Creator Data
@@ -55,12 +64,12 @@ function ViewCourse() {
           );
           setCreatorData(result.data);
         } catch (error) {
-          console.log(error);
+          console.error("Failed to fetch creator:", error);
         }
       }
     };
     handleCreator();
-  }, [selectedCourse]);
+  }, [selectedCourse]); 
 
   // Creator Courses
   const creatorCourses = useMemo(() => {
@@ -88,7 +97,6 @@ function ViewCourse() {
         description: "Course Enrollment Payment",
         order_id: orderData.data.id,
         handler: async function (response) {
-          console.log("Razorpay response", response);
           try {
             const verifyPayment = await axios.post(
               `${serverUrl}/api/order/verifypayment`,
@@ -101,8 +109,6 @@ function ViewCourse() {
             );
             
             setPaymentSuccess(true);
-            
-            console.log(verifyPayment);
             toast.success(verifyPayment.data.message);
           } catch (error) {
             toast.error(error.response?.data?.message || "Payment verification failed");
@@ -112,7 +118,7 @@ function ViewCourse() {
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (error) {
-      console.log(error);
+      console.error(error);
       toast.error("Something went wrong while enrolling.");
     }
   };
@@ -131,7 +137,6 @@ function ViewCourse() {
       setRating(0);
       setComment("");
     } catch (error) {
-      console.log(error);
       setLoading(false);
       toast.error(error.response?.data?.message || "Error adding review");
       setRating(0);
@@ -153,33 +158,35 @@ function ViewCourse() {
     //  OUTER BACKGROUND:
     <div className='min-h-screen bg-white relative p-6'>
       
-      {/* 3. OUTER PATTERN: Fixed position */}
+      {/* OUTER PATTERN */}
       <StripedPattern 
         width={30} 
         height={30} 
         className="fixed inset-0 z-0 opacity-20 text-gray-300" 
       />
 
-      {/*  INNER CONTAINER*/}
+      {/* INNER CONTAINER*/}
       <div className='max-w-6xl mx-auto bg-white shadow-md rounded-xl relative overflow-hidden'>
         
-        {/* 5. INNER PATTERN: Absolute position inside the card */}
+        {/* INNER PATTERN */}
         <StripedPattern 
           width={20} 
           height={20} 
-          direction="right" // Different direction for visual distinction
+          direction="right" 
           className="absolute inset-0 z-0 opacity-30 text-gray-400" 
         />
 
-        {/* 6. CONTENT WRAPPER: Added relative z-10 p-6 space-y-6 so content sits ON TOP */}
+        {/* CONTENT WRAPPER */}
         <div className="relative z-10 p-6 space-y-6">
           {/* Top Section */}
           <div className='flex flex-col md:flex-row gap-6'>
             {/* Thumbnail */}
             <div className='w-full md:w-1/2'>
-              <BsArrowReturnLeft className='text-[black] w-22px h-22px cursor-pointer' onClick={()=>navigate("/allcourses")}/>
-              {selectedCourse?.thumbnail ? <img src={selectedCourse?.thumbnail} alt='' className='rounded-xl w-full object-cover'/>
-              : <img src={img} alt='' className='rounded-xl w-full object-cover'/>}
+              <BsArrowReturnLeft className='text-[black] w-22px h-22px cursor-pointer hover:scale-110 transition-transform' onClick={()=>navigate("/allcourses")}/>
+              <div className="mt-4">
+                {selectedCourse?.thumbnail ? <img src={selectedCourse?.thumbnail} alt='' className='rounded-xl w-full object-cover shadow-sm'/>
+                : <img src={img} alt='' className='rounded-xl w-full object-cover shadow-sm'/>}
+              </div>
             </div>
             {/* Course Info */}
             <div className='flex-1 space-y-2 mt-[20px]'>
@@ -192,17 +199,17 @@ function ViewCourse() {
               </div>
               <div>
                 <span className='text-xl font-semibold text-black'>₹{selectedCourse?.price}</span>{""}
-                <span className='line-through text-sm text-gray-400'>₹1999</span>
+                <span className='line-through text-sm text-gray-400 ml-2'>₹1999</span>
               </div>
               <ul className='text-sm text-gray-700 space-y-1 pt-2'>
-                <li>✅10+ hours of video content</li>
-                <li>✅Lifetime access to course materials</li>
+                <li>✅ 10+ hours of video content</li>
+                <li>✅ Lifetime access to course materials</li>
               </ul>
-              {!isEnrolled ? <button className='bg-[black] text-white px-6 py-2 rounded hover:bg-gray-700 mt-3 cursor-pointer'
+              {!isEnrolled ? <button className='bg-[black] text-white px-6 py-2 rounded hover:bg-gray-800 transition mt-3 cursor-pointer'
               onClick={()=>handleEnroll(userData?._id,courseId)}>
                 Enroll Now
               </button> :
-              <button className='bg-green-100 text-green-500 px-6 py-2 rounded hover:bg-gray-700 mt-3 cursor-pointer'
+              <button className='bg-green-100 text-green-600 px-6 py-2 rounded hover:bg-green-200 transition mt-3 cursor-pointer font-medium'
               onClick={()=>navigate(`/viewlecture/${courseId}`)}>Watch Now</button>}
               </div>
 
@@ -212,7 +219,7 @@ function ViewCourse() {
           <div>
           <h2 className='text-xl font-semibold mb-2'>What You'll Learn</h2>
           <ul className='list-disc pl-6 text-gray-700 space-y-1'>
-          <li>Learn {selectedCourse?.category} from beginning</li>
+            <li>Learn {selectedCourse?.category} from beginning</li>
           </ul>
           </div>
 
@@ -222,52 +229,57 @@ function ViewCourse() {
           </div>
 
           <div className='flex flex-col md:flex-row gap-6'>
-          <div className='bg-white w-full md:w-2/5 p-6 rounded-2xl shadow-lg border border-gray-200'>
-          <h2 className='text-xl font-bold mb-1 text-gray-800'>Course Curriculum</h2>
-          <p className='text-sm text-gray-500 mb-4'>
-            {selectedCourse?.lectures?.length} Lectures
-          </p>
-          <div className='flex flex-col gap-3'>
-            {selectedCourse?.lectures?.map((lecture,index)=>(
-            <button key={index} disabled={!lecture.isPreviewFree} className={`flex items-center gap-3 px-4 py-3 rounded-lg border 
-            transition-all duration-200 text-left ${lecture.isPreviewFree? "hover:bg-gray-100 cursor-pointer border-gray-300"
-            :"cursor-not-allowed opacity-60 border-gray-200"} ${selectedLecture?.lectureTitle === lecture?.lectureTitle ? "bg-gray-100 border-gray-400": ""}`}
-              onClick={()=>{
-              if(lecture.isPreviewFree){setSelectedLecture(lecture)}}}>
-              <span className='text-lg text-gray-700'>
-                {lecture.isPreviewFree? <FaPlayCircle />:<FaLock /> }
-              </span>
-              <span className='text-sm font-medium text-gray-800'>{lecture?.lectureTitle}</span>
-            </button>
-            ))}
+            <div className='bg-white w-full md:w-2/5 p-6 rounded-2xl shadow-lg border border-gray-200'>
+              <h2 className='text-xl font-bold mb-1 text-gray-800'>Course Curriculum</h2>
+              <p className='text-sm text-gray-500 mb-4'>
+                {selectedCourse?.lectures?.length} Lectures
+              </p>
+              <div className='flex flex-col gap-3 max-h-[400px] overflow-y-auto pr-2'>
+                {selectedCourse?.lectures?.map((lecture,index)=>(
+                <button key={index} disabled={!lecture.isPreviewFree} className={`flex items-center gap-3 px-4 py-3 rounded-lg border 
+                transition-all duration-200 text-left ${lecture.isPreviewFree? "hover:bg-gray-100 cursor-pointer border-gray-300"
+                :"cursor-not-allowed opacity-60 border-gray-200"} ${selectedLecture?.lectureTitle === lecture?.lectureTitle ? "bg-gray-100 border-gray-400 ring-1 ring-gray-400": ""}`}
+                  onClick={()=>{
+                  if(lecture.isPreviewFree){setSelectedLecture(lecture)}}}>
+                  <span className='text-lg text-gray-700'>
+                    {lecture.isPreviewFree? <FaPlayCircle />:<FaLock /> }
+                  </span>
+                  <span className='text-sm font-medium text-gray-800 line-clamp-1'>{lecture?.lectureTitle}</span>
+                </button>
+                ))}
+              </div>
+            </div>
+            {/* Right Portion */}
+            <div className='bg-white w-full md:w-3/5 p-6 rounded-2xl shadow-lg border border-gray-200'>
+              <div className='aspect-video w-full rounded-lg overflow-hidden mb-4 bg-black flex items-center justify-center'>
+                {selectedLecture?.videoUrl ? <video key={selectedLecture?.videoUrl} className='w-full h-full object-cover' src={selectedLecture?.videoUrl} controls autoPlay/> : 
+                <div className="text-center p-4">
+                   <FaPlayCircle className="text-white text-4xl mx-auto mb-2 opacity-50"/>
+                   <span className='text-white text-sm'>Select a preview lecture to watch</span>
+                </div>}
+              </div>
+            </div>
           </div>
-          </div>
-          {/* Right Portion */}
-          <div className='bg-white w-full md:w-3/5 p-6 rounded-2xl shadow-lg border border-gray-200'>
-          <div className='aspect-video w-full rounded-lg overflow-hidden mb-4 bg-black flex items-center justify-center'>
-            {selectedLecture?.videoUrl ? <video className='w-full h-full object-cover' src={selectedLecture?.videoUrl} controls/> : 
-            <span className='text-white text-sm'>Select a preview lecture to watch</span>}
-          </div>
-          </div>
-          </div>
+
           <div className='mt-8 border-t pt-6'>
-          <h2 className='text-xl font-semibold mb-2'>
-          Write a Reviews
-          </h2>
-          <div className='mb-4'>
-          <div className='flex gap-1 mb-2'>
-            {
-              [1,2,3,4,5].map((star)=>(
-                <FaStar key={star} onClick={()=>setRating(star)} className={star <= rating ? "fill-amber-300":"fill-gray-300"}/>
-              ))
-            }
+            <h2 className='text-xl font-semibold mb-2'>
+            Write a Review
+            </h2>
+            <div className='mb-4'>
+            <div className='flex gap-1 mb-2'>
+              {
+                [1,2,3,4,5].map((star)=>(
+                  <FaStar key={star} onClick={()=>setRating(star)} className={`cursor-pointer transition-colors ${star <= rating ? "fill-amber-400":"fill-gray-300"}`}/>
+                ))
+              }
+            </div>
+            <textarea onChange={(e)=>setComment(e.target.value)} value={comment} className='w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-black' placeholder='Write your review here...' rows={3}/>
+            <button className='bg-black text-white mt-3 px-4 py-2 rounded hover:bg-gray-800 transition' disabled={loading} onClick={handleReview}>
+              {loading? <ClipLoader size={20} color='white'/>:"Submit Review"}
+            </button>
+            </div>
           </div>
-          <textarea onChange={(e)=>setComment(e.target.value)} value={comment} className='w-full border border-gray-300 rounded-lg p-2' placeholder='Write your review here...' rows={3}/>
-          <button className='bg-black text-white mt-3 px-4 py-2 rounded hover:bg-gray-800' disabled={loading} onClick={handleReview}>
-            {loading? <ClipLoader size={30} color='white'/>:"Submit Review"}
-          </button>
-          </div>
-          </div>
+
           {/* For Creator Info */}
           <div className='flex items-center gap-4 pt-4 border-t'>
             {creatorData?.photoUrl ? <img src={creatorData?.photoUrl} alt='' className='border border-gray-200 w-16 h-16 rounded-full object-cover'/> : 
@@ -276,11 +288,11 @@ function ViewCourse() {
             <div>
               <h2 className='text-lg font-semibold'>{creatorData?.name}</h2>
               <p className='md:text-sm text-gray-600 text-[10px]'>{creatorData?.description}</p>
-              <p className='md:text-sm text-gray-600 text-[10px]'>{creatorData?.email}</p>
+              <p className='md:text-sm text-gray-500 text-[10px]'>{creatorData?.email}</p>
             </div>
           </div>
           <div>
-            <p className='text-xl font-semibold mb-2'>Other published courses by the Educator -</p>
+            <p className='text-xl font-semibold mb-2'>Other published courses by the Educator:</p>
           </div>
           <div className='w-full transition-all duration-300 py-[20px] flex items-start justify-center
           lg:justify-start flex-wrap gap-6 lg:px-[80px]'>
