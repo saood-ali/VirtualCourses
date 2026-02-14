@@ -51,7 +51,7 @@ function CreateLecture() {
   },[courseId, dispatch])
 
   return (
-    // PARENT CONTAINER: Added 'relative' and 'overflow-hidden' for the DotPattern positioning
+    // PARENT CONTAINER
     <div className='min-h-screen bg-gray-100 flex items-center justify-center p-4 relative overflow-hidden'>
       
       {/* 1. DOT PATTERN: Placed as a background element */}
@@ -77,9 +77,9 @@ function CreateLecture() {
             {/* Button Area */}
             <div className='flex gap-4 mb-6'>
               <button className='flex items-center gap-2 px-4 py-2 rounded-md bg-gray-200 
-              hover:bg-gray-300 text-sm font-medium' onClick={()=>navigate(`/editcourse/${courseId}`)}> <BsArrowReturnLeft/>Back to Courses</button>
+              hover:bg-gray-300 text-sm font-medium cursor-pointer' onClick={()=>navigate(`/editcourse/${courseId}`)}> <BsArrowReturnLeft/>Back to Courses</button>
               <button className='px-5 py-2 rounded-md bg-black text-white hover:bg-gray-600
-              transition-all text-sm font-medium shadow' disabled={loading} onClick={handleCreateLecture}>
+              transition-all text-sm font-medium shadow cursor-pointer' disabled={loading} onClick={handleCreateLecture}>
               {loading? <ClipLoader color="white" size={30}/>: "+Create Lecture"}</button>
             </div>
           </div>

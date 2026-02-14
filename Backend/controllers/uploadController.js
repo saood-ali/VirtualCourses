@@ -24,7 +24,7 @@ export const generateSignature = (req, res) => {
       signature,
       timestamp,
       apiKey: process.env.CLOUDINARY_API_KEY,
-      cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+      cloudName: process.env.CLOUDINARY_NAME,
     });
   } catch (error) {
     console.error(error);

@@ -7,6 +7,7 @@ import { setLectureData } from "../../redux/lectureSlice.js";
 import { toast } from "react-toastify";
 import { serverUrl } from "../../App.jsx";
 import { ClipLoader } from "react-spinners";
+import Iridescence from "../../components/Iridescence.jsx"; 
 
 function EditLecture() {
   const { courseId, lectureId } = useParams();
@@ -14,7 +15,7 @@ function EditLecture() {
   const selectedLecture = lectureData.find((lecture) => lecture._id === lectureId);
 
   const [lectureTitle, setLectureTitle] = useState(selectedLecture?.lectureTitle || "");
-  const [videoFile, setVideoFile] = useState(null); // Changed: Stores file object, not URL
+  const [videoFile, setVideoFile] = useState(null); 
   const [isPreviewFree, setIsPreviewFree] = useState(selectedLecture?.isPreviewFree || false);
   
   const [loading, setLoading] = useState(false);
@@ -24,7 +25,6 @@ function EditLecture() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // --- NEW: Helper function for Direct Upload ---
   const uploadVideoToCloudinary = async (file) => {
     try {
       const { data: signData } = await axios.get(`${serverUrl}/api/upload/signature`, {
@@ -33,14 +33,12 @@ function EditLecture() {
 
       const { signature, timestamp, apiKey, cloudName } = signData;
 
-      //  Prepare Data for Cloudinary
       const formData = new FormData();
       formData.append("file", file);
       formData.append("api_key", apiKey);
       formData.append("timestamp", timestamp);
       formData.append("signature", signature);
 
-      // 3. Upload Directly to Cloudinary
       const uploadRes = await axios.post(
         `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`,
         formData,
@@ -64,20 +62,16 @@ function EditLecture() {
     try {
       let finalVideoUrl = "";
 
-      // Step A: If user selected a new video, upload it first
       if (videoFile) {
         toast.info("Uploading video to cloud... please wait");
         finalVideoUrl = await uploadVideoToCloudinary(videoFile);
       }
 
-      // Step B: Send updated data to Backend
-      // NOTE: We are sending JSON now, not FormData, because the file is already uploaded!
       const payload = {
         lectureTitle,
         isPreviewFree,
       };
       
-      // Only attach videoUrl if we actually uploaded a new one
       if (finalVideoUrl) {
         payload.videoUrl = finalVideoUrl;
       }
@@ -90,7 +84,6 @@ function EditLecture() {
 
       console.log(result.data);
       
-      // Update Redux
       const updatedLectures = lectureData.map(l => l._id === lectureId ? result.data : l);
       dispatch(setLectureData(updatedLectures));
 
@@ -112,7 +105,6 @@ function EditLecture() {
       const result = await axios.delete(`${serverUrl}/api/course/removelecture/${lectureId}`, { withCredentials: true });
       console.log(result.data);
       
-      // Remove from Redux
       const filtered = lectureData.filter(l => l._id !== lectureId);
       dispatch(setLectureData(filtered));
 
@@ -127,26 +119,39 @@ function EditLecture() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-xl bg-white rounded-xl shadow-lg p-6 space-y-6">
+    // 1. Container set to relative and overflow hidden to contain the background
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      
+      {/* 2. The Iridescence Background Layer */}
+      <div className="absolute inset-0 -z-10">
+        <Iridescence 
+          color={[0.9, 0.9, 0.9]} // Subtle gray/white shimmer
+          mouseReact={false} 
+          speed={0.7} 
+          amplitude={0.1} 
+        />
+      </div>
+
+      {/* 3. The Content Card */}
+      <div className="w-full max-w-xl bg-white/90 backdrop-blur-sm rounded-xl shadow-2xl p-6 space-y-6 border border-white/50">
        
        {/* Header */}
        <div className="flex items-center gap-2 mb-2">
-        <BsArrowReturnLeft className="text-gray-600 cursor-pointer" onClick={()=>navigate(`/createlecture/${courseId}`)}/>
+        <BsArrowReturnLeft className="text-gray-600 cursor-pointer hover:text-black transition" onClick={()=>navigate(`/createlecture/${courseId}`)}/>
         <h2 className="text-xl font-semibold text-gray-800">
         Update course lecture
         </h2>
        </div>
 
        <button className="mt-2 px-4 py-2 bg-red-600 text-white rounded-md
-        hover:bg-red-800 transition-all text-sm" disabled={loading1} onClick={removeLecture}>
+        hover:bg-red-800 transition-all text-sm cursor-pointer shadow-md" disabled={loading1} onClick={removeLecture}>
         {loading1? <ClipLoader size={20} color="white" />:"Remove Lecture"}</button>
 
         <div className="space-y-4 ">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="lectureTitle">LectureTitle*</label>
             <input type="text" className="w-full p-3 border border-gray-300 rounded-md
-             text-sm focus:ring-2 focus:ring-black focus:outline-none" required onChange={(e)=>setLectureTitle(e.target.value)} 
+             text-sm focus:ring-2 focus:ring-black focus:outline-none bg-white/50" required onChange={(e)=>setLectureTitle(e.target.value)} 
              value={lectureTitle}/>
           </div>
 
@@ -155,8 +160,8 @@ function EditLecture() {
             <input 
               type="file" 
               className="w-full p-2 border border-gray-300 rounded-md text-sm file:mr-4 file:py-2 
-              file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-gray-700 file:text-white
-              hover:file:bg-gray-500" 
+              file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-gray-800 file:text-white
+              hover:file:bg-gray-700 cursor-pointer bg-white/50" 
               accept='video/*' 
               onChange={(e)=>setVideoFile(e.target.files[0])} 
             />
@@ -165,18 +170,18 @@ function EditLecture() {
           <div className="flex items-center gap-3">
            <input 
              type="checkbox" 
-             className="accent-black h-4 w-4" 
+             className="accent-black h-4 w-4 cursor-pointer" 
              id="isFree" 
              checked={isPreviewFree} 
              onChange={()=>setIsPreviewFree(prev=>!prev)}
            />
-           <label htmlFor="isFree" className="text-sm text-gray-700">Is this Video FREE?</label>
+           <label htmlFor="isFree" className="text-sm text-gray-700 cursor-pointer">Is this Video FREE?</label>
           </div>
 
           {/* Progress Bar Display */}
           {loading && uploadProgress > 0 && (
-            <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-              <div className="bg-blue-600 h-2.5 rounded-full" style={{width: `${uploadProgress}%`}}></div>
+            <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 overflow-hidden">
+              <div className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style={{width: `${uploadProgress}%`}}></div>
               <p className="text-xs text-center mt-1 text-gray-500">Uploading: {uploadProgress}%</p>
             </div>
           )}
@@ -184,7 +189,7 @@ function EditLecture() {
         </div>
         <div className="pt-4">
          <button className="w-full bg-black text-white py-3 rounded-md text-sm font-medium 
-         hover:bg-gray-700 transition" disabled={loading} onClick={handleEditLecture}>
+         hover:bg-gray-800 transition cursor-pointer shadow-lg" disabled={loading} onClick={handleEditLecture}>
          {loading? <ClipLoader color="white" size={20}/>: "Update Lecture"}</button>
         </div>
       </div>

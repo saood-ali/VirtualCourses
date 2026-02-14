@@ -4,6 +4,16 @@ import bcrypt from "bcrypt";
 import generateToken from "../config/token.js";
 import otpGenerator from "otp-generator";
 import sendMail from "../config/sendMail.js";
+
+// ✅ Standard Cookie Options 
+const cookieOptions = {
+    httpOnly: true,
+    secure: true,        // Required for Vercel/HTTPS
+    sameSite: "none",    // Required for Cross-Site
+    path: "/",           // Required so cookie works on all pages
+    maxAge: 15 * 24 * 60 * 60 * 1000, // 15 days
+};
+
 export const signUp = async(req,res)=>{
     try {
         const {name, email, password, role} = req.body;
@@ -18,20 +28,26 @@ export const signUp = async(req,res)=>{
             return res.status(400).json({message:"Password must be at least 8 characters long"})
         }
         const hashedPassword = await bcrypt.hash(password,10);
+        
+        // Create user
         const user = await User.create({
             name,
             email,
             password: hashedPassword,
             role,
         })
+
+        // Generate Token
         let token = await generateToken(user._id);
-        res.cookie("token",token,{
-            httpOnly:true,
-            secure:true,
-            sameSite:"none",
-            maxAge:1000*60*60*24*7,
-        })
-        return res.status(201).json(user)
+
+        res.cookie("token", token, cookieOptions);
+
+        return res.status(201).json({
+            message: "User Registered Successfully",
+            user,
+            token
+        });
+
     } catch (error) {
         return res.status(500).json({message:`SignUp Error ${error.message}`})
     }
@@ -48,19 +64,16 @@ export const login = async(req,res)=>{
         if(!isPasswordMatched){
             return res.status(400).json({message:"Invalid password"})
         }
+
         let token = await generateToken(user._id);
-        res.cookie("token",token,{
-            httpOnly:true,
-            secure:true,
-            sameSite:"None",
-            path: "/",
-            maxAge:1000*60*60*24*7
-        })
+
+        res.cookie("token", token, cookieOptions);
+
         return res.status(200).json({
               message: `Welcome back ${user.name}`,
               token: token, 
               user: user
-})
+        })
         
     } catch (error) {
         return res.status(500).json({message:`Login Error ${error.message}`})
@@ -72,7 +85,7 @@ export const logout = async (req, res) => {
         res.clearCookie("token", {
             httpOnly: true,
             secure: true,
-            sameSite: "None",
+            sameSite: "none",
             path: "/", 
         });
 
@@ -83,6 +96,38 @@ export const logout = async (req, res) => {
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const googleAuth = async (req, res) => {
+    try {
+        const { name, email, role } = req.body;
+        
+        let user = await User.findOne({ email });
+
+        if (!user) {
+            user = await User.create({
+                name,
+                email,
+                role,
+                // Assign a random secure password for Google users
+                password: await bcrypt.hash(Math.random().toString(36).slice(-8) + Date.now(), 10) 
+            });
+        }
+
+        let token = await generateToken(user._id);
+
+        res.cookie("token", token, cookieOptions);
+
+        return res.status(200).json({
+            message: `Welcome back ${user.name}`,
+            user,
+            token
+        });
+
+    } catch (error) {
+        console.log(error); 
+        return res.status(500).json({ message: `GoogleAuth error ${error.message}` });
     }
 };
 
@@ -142,35 +187,3 @@ export const resetPassword = async (req,res) => {
         return res.status(500).json({message:`Reset password error ${error.message}`})
     }
 }
-
-export const googleAuth = async (req, res) => {
-    try {
-        const { name, email, role } = req.body;
-        
-        let user = await User.findOne({ email });
-
-        if (!user) {
-            user = await User.create({
-                name,
-                email,
-                role,
-                password: Math.random().toString(36).slice(-8) + "googleAuth" 
-            });
-        }
-
-        let token = await generateToken(user._id);
-        
-        res.cookie("token", token, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "none",
-            maxAge: 1000 * 60 * 60 * 24 * 7,
-        });
-
-        return res.status(200).json(user);
-
-    } catch (error) {
-        console.log(error); 
-        return res.status(500).json({ message: `GoogleAuth error ${error.message}` });
-    }
-};
