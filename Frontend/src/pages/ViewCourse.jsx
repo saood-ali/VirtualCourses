@@ -31,6 +31,13 @@ function ViewCourse() {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [prevLectureId, setPrevLectureId] = useState(selectedLecture?._id);
+
+  if (selectedLecture?._id !== prevLectureId) {
+    setPrevLectureId(selectedLecture?._id);
+    setIsVideoPlaying(false);
+  }
 
   // Scroll to Top on navigation
   useEffect(() => {
@@ -302,29 +309,54 @@ function ViewCourse() {
               </div>
             </div>
             {/* Right Portion */}
+            {/* Right Portion */}
             <div className="bg-white w-full md:w-3/5 p-6 rounded-2xl shadow-lg border border-gray-200">
-              <div className="aspect-video w-full rounded-lg overflow-hidden mb-4 bg-black flex items-center justify-center relative">
+              <div className="aspect-video w-full rounded-lg overflow-hidden mb-4 bg-black flex items-center justify-center relative group">
                 {selectedLecture?.videoUrl ? (
-                  <ReactPlayer
-                    // 1. URL to play
-                    url={selectedLecture?.videoUrl}
-                    // 2. Responsive dimensions (Fit container)
-                    width="100%"
-                    height="100%"
-                    // 3. Enable "Pro" Controls (Speed, Seek, Volume)
-                    controls={true}
-                    // 4. Auto-play when a new lecture is selected
-                    playing={true}
-                    // 5. Advanced Config (Optional: Prevents right-click download)
-                    config={{
-                      file: {
-                        attributes: {
-                          controlsList: "nodownload",
-                          onContextMenu: (e) => e.preventDefault(),
+                  <>
+                    {/* 1. THE PLAYER (Always mounted, waiting for command) */}
+                    <ReactPlayer
+                      url={selectedLecture?.videoUrl}
+                      width="100%"
+                      height="100%"
+                      controls={true}
+                      playing={isVideoPlaying}
+                      light={false}
+                      config={{
+                        file: {
+                          attributes: {
+                            controlsList: "nodownload",
+                            onContextMenu: (e) => e.preventDefault(),
+                          },
                         },
-                      },
-                    }}
-                  />
+                      }}
+                      onError={(e) => console.error("ReactPlayer Error:", e)}
+                    />
+
+                    {/* 2. THE MANUAL OVERLAY (Sits on top until clicked) */}
+                    {!isVideoPlaying && (
+                      <div
+                        className="absolute inset-0 z-10 flex items-center justify-center bg-black/50 cursor-pointer"
+                        style={{
+                          backgroundImage: `url(${selectedCourse?.thumbnail || img})`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                        }}
+                        onClick={() => setIsVideoPlaying(true)}
+                      >
+                        {/* Dark Overlay for text readability */}
+                        <div className="absolute inset-0 bg-black/40 transition-opacity group-hover:bg-black/20"></div>
+
+                        {/* Big Play Button */}
+                        <div className="relative z-20 flex flex-col items-center transform transition-transform group-hover:scale-110">
+                          <FaPlayCircle className="text-white text-6xl drop-shadow-lg" />
+                          <p className="text-white font-semibold mt-2 drop-shadow-md">
+                            Play Lecture
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div className="text-center p-4">
                     <FaPlayCircle className="text-white text-4xl mx-auto mb-2 opacity-50" />

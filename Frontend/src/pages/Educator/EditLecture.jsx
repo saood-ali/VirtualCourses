@@ -1,6 +1,7 @@
 import axios from "axios";
 import React, { useState } from "react";
 import { BsArrowReturnLeft } from "react-icons/bs";
+import { FaCheckCircle } from "react-icons/fa"; 
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { setLectureData } from "../../redux/lectureSlice.js";
@@ -8,6 +9,7 @@ import { toast } from "react-toastify";
 import { serverUrl } from "../../App.jsx";
 import { ClipLoader } from "react-spinners";
 import Iridescence from "../../components/Iridescence.jsx"; 
+import ReactPlayer from 'react-player'; 
 
 function EditLecture() {
   const { courseId, lectureId } = useParams();
@@ -157,6 +159,27 @@ function EditLecture() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Video (Optional update)</label>
+            
+            {selectedLecture?.videoUrl && !videoFile && (
+              <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-md flex flex-col gap-2">
+                <div className="flex items-center gap-2 text-green-700 text-sm font-medium">
+                  <FaCheckCircle />
+                  <span>Current Video Uploaded</span>
+                </div>
+                {/* Small Preview Player */}
+                <div className="w-full aspect-video rounded-md overflow-hidden bg-black relative">
+                   <ReactPlayer 
+                      url={selectedLecture.videoUrl} 
+                      width="100%" 
+                      height="100%" 
+                      controls={true} 
+                      light={true} // Shows thumbnail first (lighter on resources)
+                   />
+                </div>
+                <p className="text-xs text-gray-500">To replace this video, choose a new file below.</p>
+              </div>
+            )}
+
             <input 
               type="file" 
               className="w-full p-2 border border-gray-300 rounded-md text-sm file:mr-4 file:py-2 
