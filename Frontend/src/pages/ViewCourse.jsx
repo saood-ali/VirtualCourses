@@ -32,12 +32,15 @@ function ViewCourse() {
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
-  const [prevLectureId, setPrevLectureId] = useState(selectedLecture?._id);
 
-  if (selectedLecture?._id !== prevLectureId) {
-    setPrevLectureId(selectedLecture?._id);
-    setIsVideoPlaying(false);
-  }
+  useEffect(() => {
+    if (selectedLecture?._id) {
+      const timer = setTimeout(() => {
+        setIsVideoPlaying(false);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedLecture?._id]);
 
   // Scroll to Top on navigation
   useEffect(() => {
@@ -309,12 +312,10 @@ function ViewCourse() {
               </div>
             </div>
             {/* Right Portion */}
-            {/* Right Portion */}
             <div className="bg-white w-full md:w-3/5 p-6 rounded-2xl shadow-lg border border-gray-200">
               <div className="aspect-video w-full rounded-lg overflow-hidden mb-4 bg-black flex items-center justify-center relative group">
                 {selectedLecture?.videoUrl ? (
                   <>
-                    {/* 1. THE PLAYER (Always mounted, waiting for command) */}
                     <ReactPlayer
                       url={selectedLecture?.videoUrl}
                       width="100%"
@@ -333,29 +334,25 @@ function ViewCourse() {
                       onError={(e) => console.error("ReactPlayer Error:", e)}
                     />
 
-                    {/* 2. THE MANUAL OVERLAY (Sits on top until clicked) */}
-                    {!isVideoPlaying && (
-                      <div
-                        className="absolute inset-0 z-10 flex items-center justify-center bg-black/50 cursor-pointer"
-                        style={{
-                          backgroundImage: `url(${selectedCourse?.thumbnail || img})`,
-                          backgroundSize: "cover",
-                          backgroundPosition: "center",
-                        }}
-                        onClick={() => setIsVideoPlaying(true)}
-                      >
-                        {/* Dark Overlay for text readability */}
-                        <div className="absolute inset-0 bg-black/40 transition-opacity group-hover:bg-black/20"></div>
-
-                        {/* Big Play Button */}
-                        <div className="relative z-20 flex flex-col items-center transform transition-transform group-hover:scale-110">
-                          <FaPlayCircle className="text-white text-6xl drop-shadow-lg" />
-                          <p className="text-white font-semibold mt-2 drop-shadow-md">
-                            Play Lecture
-                          </p>
-                        </div>
+                    {/* 2. THE MANUAL OVERLAY (Covers the player until clicked) */}
+                    <div
+                      className={`absolute inset-0 z-10 items-center justify-center bg-black/50 cursor-pointer 
+          ${isVideoPlaying ? "hidden" : "flex"}`}
+                      style={{
+                        backgroundImage: `url(${selectedCourse?.thumbnail || img})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                      }}
+                      onClick={() => setIsVideoPlaying(true)}
+                    >
+                      <div className="absolute inset-0 bg-black/40 transition-opacity group-hover:bg-black/20"></div>
+                      <div className="relative z-20 flex flex-col items-center transform transition-transform group-hover:scale-110">
+                        <FaPlayCircle className="text-white text-6xl drop-shadow-lg" />
+                        <p className="text-white font-semibold mt-2 drop-shadow-md">
+                          Play Lecture
+                        </p>
                       </div>
-                    )}
+                    </div>
                   </>
                 ) : (
                   <div className="text-center p-4">

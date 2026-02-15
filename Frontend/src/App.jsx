@@ -28,11 +28,18 @@ export const serverUrl = "https://virtual-courses-two.vercel.app";
 
 
 function App() {
-  useGetCurrentUser();
   useGetCreatorCourse();
   useGetPublishedCourse();
   useGetAllReviews();
-  const {userData} = useSelector(state=>state.user)
+  const isUserLoading = useGetCurrentUser();
+  const {userData} = useSelector(state=>state.user);
+  if (isUserLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-white">
+         <p>Loading...</p> 
+      </div>
+    );
+  }
   return (
     <div>
     <ToastContainer />
