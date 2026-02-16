@@ -33,9 +33,7 @@ const useGetCurrentUser = () => {
         localStorage.removeItem("token");
         dispatch(setUserData(null));
       } finally {
-        setTimeout(() => {
-            setIsLoading(false);
-        }, 100);
+        setIsLoading(false);
       }
     };
 

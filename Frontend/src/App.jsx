@@ -35,8 +35,18 @@ function App() {
   const {userData} = useSelector(state=>state.user);
   if (isUserLoading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-white">
-         <p>Loading...</p> 
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-gray-50 relative overflow-hidden">
+         <DotPattern className="absolute inset-0 opacity-50 text-gray-300" />
+         
+         <div className="z-10 bg-white/80 backdrop-blur-md border border-white/20 shadow-xl rounded-2xl p-8 flex flex-col items-center gap-4">
+            
+            <ClipLoader color="#000000" size={50} speedMultiplier={0.99} />
+            
+            <div className="flex flex-col items-center">
+              <span className="text-gray-800 font-semibold text-lg tracking-wide">Virtual Courses</span>
+              <span className="text-gray-500 text-xs uppercase tracking-widest mt-1">Verifying Session...</span>
+            </div>
+         </div>
       </div>
     );
   }
