@@ -24,6 +24,8 @@ import ViewLectures from './pages/ViewLectures.jsx'
 import MyEnrolledCourses from './pages/MyEnrolledCourses.jsx'
 import useGetAllReviews from './customHooks/getAllReviews.js'
 import SearchWithAi from './pages/SearchWithAi.jsx'
+import { ClipLoader } from 'react-spinners';
+import { DotPattern } from './components/DotPattern.jsx';
 export const serverUrl = "https://virtual-courses-two.vercel.app";
 
 

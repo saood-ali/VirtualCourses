@@ -18,11 +18,6 @@ function Home() {
   const navigate = useNavigate();
   return (
     <div className="w-full overflow-hidden relative">
-      
-      {/* ✅ FIX 3: Nav is now at the ROOT level.
-         This releases it from the z-index trap of the hero section below.
-         Combined with z-[999], it will float over everything.
-      */}
       <Nav />
 
       {/* BACKGROUND PATTERN */}
@@ -36,8 +31,6 @@ function Home() {
       />
 
       <div className="w-full lg:h-[140vh] h-[70vh] relative z-10">
-        
-        {/* Nav Removed from here */}
 
         <img src={home_page} alt="home_page" 
         className="object-cover md:object-fill w-full lg:h-full h-[50vh]"/>

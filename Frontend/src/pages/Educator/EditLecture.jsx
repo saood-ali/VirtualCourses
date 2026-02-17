@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { BsArrowReturnLeft } from "react-icons/bs";
 import { FaCheckCircle } from "react-icons/fa"; 
 import { useDispatch, useSelector } from "react-redux";
@@ -7,26 +7,61 @@ import { useNavigate, useParams } from "react-router-dom";
 import { setLectureData } from "../../redux/lectureSlice.js";
 import { toast } from "react-toastify";
 import { serverUrl } from "../../App.jsx";
-import { ClipLoader } from "react-spinners";
+import { ClipLoader, HashLoader } from "react-spinners"; 
 import Iridescence from "../../components/Iridescence.jsx"; 
 import ReactPlayer from 'react-player'; 
 
 function EditLecture() {
   const { courseId, lectureId } = useParams();
   const { lectureData } = useSelector((state) => state.lecture);
-  const selectedLecture = lectureData.find((lecture) => lecture._id === lectureId);
-
-  const [lectureTitle, setLectureTitle] = useState(selectedLecture?.lectureTitle || "");
-  const [videoFile, setVideoFile] = useState(null); 
-  const [isPreviewFree, setIsPreviewFree] = useState(selectedLecture?.isPreviewFree || false);
   
-  const [loading, setLoading] = useState(false);
-  const [loading1, setLoading1] = useState(false);
+  // Try to find in Redux first 
+  const preSelectedLecture = lectureData.find((lecture) => lecture._id === lectureId);
+
+  // --- STATE MANAGEMENT ---
+  const [lectureTitle, setLectureTitle] = useState(preSelectedLecture?.lectureTitle || "");
+  const [isPreviewFree, setIsPreviewFree] = useState(preSelectedLecture?.isPreviewFree || false);
+  const [currentVideoUrl, setCurrentVideoUrl] = useState(preSelectedLecture?.videoUrl || ""); // Local state for preview
+  const [videoFile, setVideoFile] = useState(null); 
+  
+  // Loading States
+  const [pageLoading, setPageLoading] = useState(!preSelectedLecture); // Show loader if data isn't in Redux
+  const [loading, setLoading] = useState(false); // Update button loading
+  const [loading1, setLoading1] = useState(false); // Remove button loading
   const [uploadProgress, setUploadProgress] = useState(0); 
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  // --- 1. NEW: Fetch Data on Refresh ---
+  useEffect(() => {
+    const fetchLectureDetails = async () => {
+      if (!preSelectedLecture) {
+        try {
+          setPageLoading(true);
+          const { data } = await axios.get(`${serverUrl}/api/course/getlecture/${lectureId}`, {
+            withCredentials: true
+          });
+
+          if (data && data.success !== false) {
+             setLectureTitle(data.lectureTitle);
+             setIsPreviewFree(data.isPreviewFree);
+             setCurrentVideoUrl(data.videoUrl);
+          }
+        } catch (error) {
+          console.error("Failed to fetch lecture:", error);
+          toast.error("Could not load lecture details. Please try again.");
+        } finally {
+          setPageLoading(false);
+        }
+      }
+    };
+
+    fetchLectureDetails();
+  }, [lectureId, preSelectedLecture]);
+
+
+  // --- Helper: Upload Video ---
   const uploadVideoToCloudinary = async (file) => {
     try {
       const { data: signData } = await axios.get(`${serverUrl}/api/upload/signature`, {
@@ -59,10 +94,11 @@ function EditLecture() {
     }
   };
 
+  // --- Handler: Update Lecture ---
   const handleEditLecture = async () => {
     setLoading(true);
     try {
-      let finalVideoUrl = "";
+      let finalVideoUrl = currentVideoUrl; // Default to existing URL
 
       if (videoFile) {
         toast.info("Uploading video to cloud... please wait");
@@ -72,11 +108,8 @@ function EditLecture() {
       const payload = {
         lectureTitle,
         isPreviewFree,
+        videoUrl: finalVideoUrl // Always send the URL (either old or new)
       };
-      
-      if (finalVideoUrl) {
-        payload.videoUrl = finalVideoUrl;
-      }
 
       const result = await axios.post(
         `${serverUrl}/api/course/editlecture/${lectureId}`, 
@@ -86,11 +119,13 @@ function EditLecture() {
 
       console.log(result.data);
       
+      // Update Redux Store so the UI stays consistent without refresh
       const updatedLectures = lectureData.map(l => l._id === lectureId ? result.data : l);
       dispatch(setLectureData(updatedLectures));
 
       toast.success("Lecture Updated Successfully");
-      navigate("/courses"); 
+      // Go back to the lecture list for this course
+      navigate(`/createlecture/${courseId}`); 
     } catch (error) {
       console.log(error);
       const msg = error.response?.data?.message || "Update failed";
@@ -101,7 +136,10 @@ function EditLecture() {
     }
   };
     
+  // --- Handler: Remove Lecture ---
   const removeLecture = async () => {
+    if(!window.confirm("Are you sure you want to delete this lecture?")) return;
+    
     setLoading1(true);
     try {
       const result = await axios.delete(`${serverUrl}/api/course/removelecture/${lectureId}`, { withCredentials: true });
@@ -120,21 +158,31 @@ function EditLecture() {
     }
   };
 
+  // --- RENDER: Loading Screen ---
+  if (pageLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+        <HashLoader color="#000000" size={50} />
+        <p className="mt-4 text-gray-500 font-medium">Fetching lecture details...</p>
+      </div>
+    );
+  }
+
+  // --- RENDER: Main Form ---
   return (
-    // 1. Container set to relative and overflow hidden to contain the background
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
       
-      {/* 2. The Iridescence Background Layer */}
+      {/* Background */}
       <div className="absolute inset-0 -z-10">
         <Iridescence 
-          color={[0.9, 0.9, 0.9]} // Subtle gray/white shimmer
+          color={[0.9, 0.9, 0.9]} 
           mouseReact={false} 
           speed={0.7} 
           amplitude={0.1} 
         />
       </div>
 
-      {/* 3. The Content Card */}
+      {/* Content Card */}
       <div className="w-full max-w-xl bg-white/90 backdrop-blur-sm rounded-xl shadow-2xl p-6 space-y-6 border border-white/50">
        
        {/* Header */}
@@ -160,7 +208,8 @@ function EditLecture() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Video (Optional update)</label>
             
-            {selectedLecture?.videoUrl && !videoFile && (
+            {/* Display Current Video if it exists in state */}
+            {currentVideoUrl && !videoFile && (
               <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-md flex flex-col gap-2">
                 <div className="flex items-center gap-2 text-green-700 text-sm font-medium">
                   <FaCheckCircle />
@@ -169,11 +218,11 @@ function EditLecture() {
                 {/* Small Preview Player */}
                 <div className="w-full aspect-video rounded-md overflow-hidden bg-black relative">
                    <ReactPlayer 
-                      url={selectedLecture.videoUrl} 
+                      url={currentVideoUrl} 
                       width="100%" 
                       height="100%" 
                       controls={true} 
-                      light={true} // Shows thumbnail first (lighter on resources)
+                      light={true} 
                    />
                 </div>
                 <p className="text-xs text-gray-500">To replace this video, choose a new file below.</p>
