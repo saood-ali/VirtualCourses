@@ -432,7 +432,7 @@ function ViewCourse() {
           </div>
           <div
             className="w-full transition-all duration-300 py-[20px] flex items-start justify-center
-          lg:justify-start flex-wrap gap-6 lg:px-[80px]"
+          lg:justify-start flex-wrap gap-6 lg:px-[80px] cursor-pointer"
           >
             {creatorCourses?.map((course, index) => (
               <Card

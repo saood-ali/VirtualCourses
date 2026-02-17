@@ -30,10 +30,8 @@ function AllCourses() {
   }, [courseData, category]);
 
   return (
-    // 2. Main Container: Changed bg-gray-50 to bg-white so the grid looks clean
     <div className='flex min-h-screen bg-white relative overflow-hidden'>
       
-      {/* 3. BACKGROUND: Flickering Grid (Fixed Position) */}
       <FlickeringGrid
         className="fixed inset-0 z-0 h-full w-full"
         squareSize={6}
@@ -77,20 +75,18 @@ function AllCourses() {
         </form>
       </aside>
 
-      {/* 4. Main Content: Added relative z-10 to sit ABOVE the grid */}
-      <main className='w-full relative z-10 transition-all duration-300 py-[130px] md:pl-[300px] flex items-start justify-center md:justify-start flex-wrap gap-8 px-[20px]'>
+      {/* 4. Main Content */}
+      <main className='w-full relative z-10 transition-all duration-300 py-[130px] md:pl-[300px] flex items-start justify-center md:justify-start flex-wrap gap-8 px-[20px] cursor-pointer'>
         {filterCourses?.map((course, index) => (
-          // Wrapper for positioning in the grid
           <div 
             key={course._id || index} 
             className="w-full md:w-[300px]" 
             onClick={() => navigate(`/course/${course._id}`)}
           >
-            {/* The TiltedCard wrapping the entire card design */}
             <TiltedCard
               containerHeight="auto"
               containerWidth="100%"
-              rotateAmplitude={12} // Reduced slightly for better usability
+              rotateAmplitude={12} 
               scaleOnHover={1.05}
               showMobileWarning={false}
               showTooltip={false}

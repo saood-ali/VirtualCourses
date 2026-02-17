@@ -175,13 +175,13 @@ function EditCourse() {
           <h2 className="text-lg font-medium mb-4">Basic Course information</h2>
           <div className="space-x-2 space-y-2">
             {!isPublished? <button className="bg-green-100 text-green-600 px-4 py-2 
-            rounded-md border hover:bg-green-200 transition-colors" onClick={()=>setIsPublished(prev=>!prev)}>
+            rounded-md border hover:bg-green-200 transition-colors cursor-pointer" onClick={()=>setIsPublished(prev=>!prev)}>
             Click to Publish
             </button> : <button className="bg-red-100 text-red-600 px-4 py-2 
-            rounded-md border hover:bg-red-200 transition-colors" onClick={()=>setIsPublished(prev=>!prev)}>
+            rounded-md border hover:bg-red-200 transition-colors cursor-pointer" onClick={()=>setIsPublished(prev=>!prev)}>
             Click to UnPublish
             </button> }
-            <button className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors" disabled={loading1}
+            <button className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors cursor-pointer" disabled={loading1}
           onClick={handleRemoveCourse}>{loading1? <ClipLoader color="white" size={20}/>: "Remove Course"}</button>
           </div>
 

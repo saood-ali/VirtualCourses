@@ -14,7 +14,7 @@ function ReviewPage() {
         through real feedback from students and professionals worldwide.
       </span>
       <div className="w-full min-[100vh] flex items-center justify-center flex-wrap gap-[50px] lg:p-[50px] 
-      md:p-[30px] p-[10px] mb-[40px]">
+      md:p-[30px] p-[10px] mb-[40px] cursor-pointer">
        {
         latestReview?.map((review,index)=>(
             <ReviewCard key={index} comment={review.comment} rating={review.rating} photoUrl={review.user.photoUrl} 
