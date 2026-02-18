@@ -1,6 +1,6 @@
 import express from "express";
 import { createCourse, createLecture, editCourse, 
-    editLecture, 
+    editLecture, getLectureById,
     getCourseById, getCourseLecture, getCreatorById, getCreatorCourses, getPublishedCourses, removeCourse, 
     removeLecture} from "../controllers/courseController.js";
 import upload from "../middleware/multer.js";
@@ -21,6 +21,7 @@ courseRouter.get("/courselecture/:courseId",isAuth,getCourseLecture);
 courseRouter.post("/editlecture/:lectureId",isAuth,editLecture);
 courseRouter.delete("/removelecture/:lectureId",isAuth,removeLecture);
 courseRouter.post("/creator",isAuth,getCreatorById);
+courseRouter.get("/getlecture/:lectureId",isAuth,getLectureById);
 
 //for search
 courseRouter.post("/search",isAuth,searchWithAi);

@@ -207,6 +207,38 @@ export const removeLecture = async (req,res) => {
     }
 }
 
+export const getLectureById = async (req, res) => {
+    try {
+        const { lectureId } = req.params;
+
+        // 1. Find the lecture directly
+        const lecture = await Lecture.findById(lectureId);
+
+        if (!lecture) {
+            return res.status(404).json({
+                success: false,
+                message: "Lecture not found"
+            });
+        }
+
+        // 2. Return the lecture details
+        return res.status(200).json({
+            success: true,
+            lectureTitle: lecture.lectureTitle,
+            videoUrl: lecture.videoUrl,
+            isPreviewFree: lecture.isPreviewFree,
+            _id: lecture._id
+        });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: `Failed to get lecture by id: ${error.message}`
+        });
+    }
+};
+
 //Get Creator
 export const getCreatorById = async (req,res) => {
     try {
