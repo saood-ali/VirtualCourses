@@ -240,15 +240,19 @@ export const getLectureById = async (req, res) => {
 };
 
 //Get Creator
-export const getCreatorById = async (req,res) => {
-    try {
-        const {userId} = req.body;
-        const user = await User.findById(userId).select("-password")
-        if(!user){
-            return res.status(404).json({message:"User is not found"})
-        }
-        return res.status(200).json(user)
-    } catch (error) {
-        return res.status(500).json({message:`Failed to get creator ${error}`})
+export const getCreatorById = async (req, res) => {
+  try {
+    const userId = req.body?.userId || req.query?.userId;
+    if (!userId) {
+      return res.status(400).json({ message: "userId is required" });
     }
-}
+    const user = await User.findById(userId).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "User is not found" });
+    }
+    return res.status(200).json(user);
+  } catch (error) {
+    console.error("getCreatorById error:", error);
+    return res.status(500).json({ message: `Failed to get creator ${error}` });
+  }
+};

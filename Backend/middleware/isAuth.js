@@ -2,14 +2,19 @@ import jwt from "jsonwebtoken";
 
 const isAuth = async (req, res, next) => {
   try {
+    // ✅ Allow CORS preflight requests
+    if (req.method === "OPTIONS") {
+      return res.sendStatus(200);
+    }
+
     let token;
-    
-    // Check Header (Best for avoiding "User doesn't have token" error)
+
+    // Check Authorization header
     const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith("Bearer")) {
+    if (authHeader && authHeader.startsWith("Bearer ")) {
       token = authHeader.split(" ")[1];
-    } 
-    // Check Cookies (Fallback)
+    }
+    // Check cookies (fallback)
     else if (req.cookies && req.cookies.token) {
       token = req.cookies.token;
     }
@@ -19,10 +24,17 @@ const isAuth = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    if(!decoded){
-    return res.status(401).json({message:"Invalid Token"});
+
+    const user =
+      decoded.userId ||
+      decoded.id ||
+      decoded.userID ||
+      decoded._id;
+
+    if (!user) {
+      return res.status(401).json({ message: "Invalid Token Payload" });
     }
-    const user = decoded.userId || decoded.id || decoded.userID || decoded._id;
+
     req.id = user;
     req.userId = user;
 
