@@ -1,17 +1,23 @@
 import mongoose from "mongoose";
+
 const lectureSchema = new mongoose.Schema({
-    lectureTitle:{
-        type:String,
-        required:true
+    lectureTitle: {
+        type: String,
+        required: true
     },
-    videoUrl:{
-        type:String
+    videoUrl: {
+        type: String,
+       required: true 
     },
-    isPreviewFree:{
-        type:Boolean,
-        default:false
+    transcript: { 
+        type: String,
+        default: "" // Store the lecture text/summary here
     },
-    
-})
-const Lecture = mongoose.model("Lecture",lectureSchema);
+    isPreviewFree: {
+        type: Boolean,
+        default: false
+    }
+}, { timestamps: true }); 
+
+const Lecture = mongoose.model("Lecture", lectureSchema);
 export default Lecture;

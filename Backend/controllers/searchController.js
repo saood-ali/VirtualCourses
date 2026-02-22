@@ -1,4 +1,5 @@
 import Course from "../models/courseModel.js";
+import Lecture from "../models/lectureModel.js";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 dotenv.config();
@@ -38,7 +39,7 @@ Query: ${input}`;
     model: "gemini-2.5-flash",
     contents: prompt,
    });
-   const keyword = response.text;
+   const keyword = response.text ? response.text() : response.text;
    const courses = await Course.find({
         isPublished:true,
         $or:[
@@ -70,3 +71,54 @@ Query: ${input}`;
     return res.status(500).json({message:`Failed to search ${error.message}`})
    }
 }
+
+export const explainLecture = async (req, res) => {
+    try {
+      const { lectureId, currentTimestamp, userQuestion } = req.body;
+  
+      if (!lectureId) {
+        return res.status(400).json({ message: "Lecture ID is required" });
+      }
+  
+      const lecture = await Lecture.findById(lectureId);
+      if (!lecture) {
+        return res.status(404).json({ message: "Lecture not found" });
+      }
+
+      // Fallback if no transcript exists yet
+      const contextText = lecture.transcript || `This lecture is titled "${lecture.lectureTitle}". No specific transcript is available.`;
+  
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  
+      const prompt = `
+        You are a smart tutor on "VirtualCourses".
+        
+        CONTEXT:
+        The student is watching: "${lecture.lectureTitle}".
+        Lecture Content: "${contextText.substring(0, 1500)}..."
+        Timestamp: ${currentTimestamp} seconds.
+        
+        STUDENT QUESTION: "${userQuestion || "Explain what is happening right now."}"
+        
+        INSTRUCTION:
+        Give a clear, short explanation (max 3 sentences). 
+      `;
+  
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+      });
+  
+      // Handle different SDK response formats
+      const answer = typeof response.text === 'function' ? response.text() : response.text;
+  
+      return res.status(200).json({ 
+        success: true, 
+        answer: answer 
+      });
+  
+    } catch (error) {
+      console.error("AI Explanation Error:", error);
+      return res.status(500).json({ message: "AI Request Failed" });
+    }
+};

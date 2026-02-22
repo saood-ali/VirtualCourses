@@ -11,6 +11,7 @@ import Card from "../components/Card.jsx";
 import { toast } from "react-toastify";
 import { ClipLoader } from "react-spinners";
 import { StripedPattern } from "../components/StripedPattern.jsx";
+import AIExplainer from "../components/AIExplainer.jsx"; 
 
 function ViewCourse() {
   const navigate = useNavigate();
@@ -89,19 +90,16 @@ function ViewCourse() {
 
   // AUTO-ADVANCE 
   const handleVideoEnded = () => {
-    // 1. Find index of current lecture
     const currentIndex = selectedCourse?.lectures?.findIndex(
       (l) => l.lectureTitle === selectedLecture?.lectureTitle
     );
 
-    // 2. Check if there is a next lecture
     if (
       currentIndex !== -1 &&
       currentIndex < selectedCourse?.lectures?.length - 1
     ) {
       const nextLecture = selectedCourse?.lectures[currentIndex + 1];
 
-      // 3. Check access permissions
       if (nextLecture.isPreviewFree || isEnrolled) {
         setSelectedLecture(nextLecture);
         toast.info(`Playing Next: ${nextLecture.lectureTitle}`);
@@ -114,7 +112,6 @@ function ViewCourse() {
     if (videoRef.current && selectedLecture) {
       const currentTime = videoRef.current.currentTime;
       if (currentTime > 0) {
-        // Save unique key: courseID + lectureTitle
         localStorage.setItem(
           `${courseId}-${selectedLecture.lectureTitle}`,
           currentTime
@@ -125,7 +122,6 @@ function ViewCourse() {
 
   const handleVideoLoaded = () => {
     if (videoRef.current && selectedLecture) {
-      //  Restore Time
       const savedTime = localStorage.getItem(
         `${courseId}-${selectedLecture.lectureTitle}`
       );
@@ -137,7 +133,7 @@ function ViewCourse() {
     }
   };
 
-  //  PICTURE-IN-PICTURE LOGIC 
+  // PiP LOGIC 
   const togglePiP = async () => {
     try {
       if (document.pictureInPictureElement) {
@@ -478,11 +474,8 @@ function ViewCourse() {
                     playsInline
                     autoPlay
                     muted={false}
-                    // Feature 1: Auto Advance
                     onEnded={handleVideoEnded}
-                    // Feature 2: Save Progress
                     onTimeUpdate={handleTimeUpdate}
-                    // Feature 3: Load Progress & Volume
                     onLoadedMetadata={handleVideoLoaded}
                   >
                     Your browser does not support the video tag.
@@ -496,6 +489,17 @@ function ViewCourse() {
                   </div>
                 )}
               </div>
+              
+              {/* AI INTEGRATION HERE */}
+              {selectedLecture && selectedLecture._id && (
+                  <div className="border-t border-gray-100 pt-4">
+                     <AIExplainer 
+                        lectureId={selectedLecture._id} 
+                        videoRef={videoRef} 
+                     />
+                  </div>
+              )}
+
             </div>
           </div>
 
