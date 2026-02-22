@@ -3,6 +3,7 @@ import { uploadOnCloudinary } from "../config/cloudinary.js";
 import Lecture from "../models/lectureModel.js";
 import Course from "../models/courseModel.js";
 import User from "../models/userModel.js";
+import { getOrSetCache, clearCache } from "../config/redis.js";
 
 const getPublicIdFromUrl = (url) => {
     if (!url) return null;
@@ -22,6 +23,7 @@ export const createCourse = async(req,res)=>{
             category,
             creator: req.id
         })
+        await clearCache(`courses:published`, `creator:courses:${req.id}`);
         return res.status(201).json(course)
     } catch (error) {
         return res.status(500).json({message:`Create course error ${error}`})
@@ -30,7 +32,11 @@ export const createCourse = async(req,res)=>{
 
 export const getPublishedCourses = async(req,res)=>{
     try {
-        const courses = await Course.find({isPublished:true}).populate("lectures reviews")
+        // 🚀 CACHE: 1 Hour (3600s). Home page doesn't change every second.
+        const courses = await getOrSetCache("courses:published", async () => {
+             return await Course.find({isPublished:true}).populate("lectures reviews")
+        }, 3600);
+
         if(!courses){
             return res.status(400).json({message:"No courses found"})
         }
@@ -43,7 +49,11 @@ export const getPublishedCourses = async(req,res)=>{
 export const getCreatorCourses = async(req,res)=>{
     try {
         const userId = req.userId;
-        const courses = await Course.find({creator:userId});
+        // 🚀 CACHE: 10 Mins (600s). Instructors refresh this page often.
+        const courses = await getOrSetCache(`creator:courses:${userId}`, async () => {
+             return await Course.find({creator:userId});
+        }, 600);
+
         if(!courses){
             return res.status(400).json({message:"No courses found"})
         }
@@ -86,6 +96,11 @@ export const editCourse = async (req, res) => {
         const updateData = { title, subTitle, description, category, level, isPublished, price, thumbnail };
         const updatedCourse = await Course.findByIdAndUpdate(courseId, updateData, { new: true });
 
+        await clearCache(
+            `course:${courseId}`, 
+            `courses:published`, 
+            `creator:courses:${userId}`
+        );
         return res.status(200).json({ message: "Course updated successfully", course: updatedCourse });
 
     } catch (error) {
@@ -97,7 +112,11 @@ export const editCourse = async (req, res) => {
 export const getCourseById = async(req,res)=>{
     try {
         const {courseId} = req.params;
-        let course = await Course.findById(courseId)
+        // 🚀 CACHE: 24 Hours. Course descriptions rarely change.
+        let course = await getOrSetCache(`course:${courseId}`, async () => {
+             return await Course.findById(courseId);
+        }, 86400);
+
         if(!course){
             return res.status(400).json({message:"Course not found"})
         }
@@ -118,7 +137,11 @@ export const removeCourse = async (req, res) => {
         }
 
         await Course.findByIdAndDelete(courseId);
-
+        await clearCache(
+            `course:${courseId}`, 
+            `courses:published`, 
+            `creator:courses:${req.id || req.userId}`
+        );
         return res.status(200).json({ message: "Course deleted successfully" });
 
     } catch (error) {
@@ -141,6 +164,7 @@ export const createLecture = async(req,res)=>{
         }
         await course.populate("lectures");
         await course.save();
+        await clearCache(`course:curriculum:${courseId}`);
         return res.status(201).json({lecture,course});
 
     } catch (error) {
@@ -151,12 +175,18 @@ export const createLecture = async(req,res)=>{
 export const getCourseLecture = async (req,res) => {
     try {
         const {courseId} = req.params;
-        const course = await Course.findById(courseId);
+
+        // 🚀 CACHE: 24 Hours. This is a heavy query (populate), huge win for Redis.
+        const course = await getOrSetCache(`course:curriculum:${courseId}`, async () => {
+            const c = await Course.findById(courseId);
+            if(!c) return null;
+            await c.populate("lectures");
+            return c;
+        }, 86400);
+
         if(!course){
             return res.status(404).json({message:`Course is not found`})
         }
-        await course.populate("lectures");
-        await course.save();
         return res.status(200).json(course)
     } catch (error) {
         return res.status(500).json({message: `Failed to getCourseLecture ${error}`}) 
@@ -183,6 +213,7 @@ export const editLecture = async (req, res) => {
         }
 
         await lecture.save();
+        await clearCache(`lecture:${lectureId}`);
         return res.status(200).json(lecture);
 
     } catch (error) {
@@ -201,6 +232,7 @@ export const removeLecture = async (req,res) => {
             {lectures:lectureId},
             {$pull:{lectures:lectureId}}
         )
+        await clearCache(`lecture:${lectureId}`);
         return res.status(200).json({message:"Lecture Removed"})
     } catch (error) {
         return res.status(500).json({message:`Failed to remove lecture ${error}`})
@@ -211,17 +243,15 @@ export const getLectureById = async (req, res) => {
     try {
         const { lectureId } = req.params;
 
-        // 1. Find the lecture directly
-        const lecture = await Lecture.findById(lectureId);
+        // 🚀 CACHE: 24 Hours. Video URLs don't change often.
+        const lecture = await getOrSetCache(`lecture:${lectureId}`, async () => {
+             return await Lecture.findById(lectureId);
+        }, 86400);
 
         if (!lecture) {
-            return res.status(404).json({
-                success: false,
-                message: "Lecture not found"
-            });
+            return res.status(404).json({ success: false, message: "Lecture not found" });
         }
 
-        // 2. Return the lecture details
         return res.status(200).json({
             success: true,
             lectureTitle: lecture.lectureTitle,
@@ -246,7 +276,12 @@ export const getCreatorById = async (req, res) => {
     if (!userId) {
       return res.status(400).json({ message: "userId is required" });
     }
-    const user = await User.findById(userId).select("-password");
+
+    // 🚀 CACHE: 24 Hours. Creator profiles (name/photo) change rarely.
+    const user = await getOrSetCache(`creator:${userId}`, async () => {
+         return await User.findById(userId).select("-password");
+    }, 86400);
+
     if (!user) {
       return res.status(404).json({ message: "User is not found" });
     }

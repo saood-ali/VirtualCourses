@@ -1,5 +1,6 @@
 import Course from "../models/courseModel.js";
 import Review from "../models/reviewModel.js";
+import {clearCache,getOrSetCache} from "../config/redis.js";
 
 export const createReview = async(req,res) =>{
     try {
@@ -23,19 +24,29 @@ export const createReview = async(req,res) =>{
         await review.save();
         await course.reviews.push(review._id);
         await course.save();
-        
+        await clearCache(
+            `course:${courseId}`,                 // 1. Clear Course Details (to show new review there)
+            `courses:published`,                  // 2. Clear Home Page (to update Star Rating on card)
+            `creator:courses:${course.creator}`,  // 3. Clear Instructor Dashboard (to update their stats)
+            `reviews:all`                         // 4. Clear the global reviews list
+        );
         return res.status(201).json(review)
     } catch (error) {
         return res.status(500).json({message:`Failed to create review ${error}`})
     }
 }
 
-export const getReviews = async(req,res)=>{
+export const getReviews = async (req, res) => {
     try {
-        const review = await Review.find({}).populate("user","course").sort({reviewedAt: -1});
-        return res.status(200).json(review)
+        const reviews = await getOrSetCache("reviews:all", async () => {
+            return await Review.find({})
+                .populate("user", "course")
+                .sort({ reviewedAt: -1 });
+        }, 3600);
+
+        return res.status(200).json(reviews);
 
     } catch (error) {
-        return res.status(500).json({message:`Failed to get review ${error}`})
+        return res.status(500).json({ message: `Failed to get review ${error}` });
     }
-}
+};

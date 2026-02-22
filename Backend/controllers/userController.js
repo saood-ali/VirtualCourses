@@ -1,5 +1,6 @@
 import User from "../models/userModel.js";
 import { v2 as cloudinary } from "cloudinary";
+import { getOrSetCache, clearCache } from "../config/redis.js";
 
 const getPublicIdFromUrl = (url) => {
   if (!url) return null;
@@ -16,20 +17,27 @@ const getPublicIdFromUrl = (url) => {
 
 export const getCurrentUser = async (req, res) => {
   try {
-    const user = await User.findById(req.id)
-      .select("-password")
-      .populate("enrolledCourses");
+    const userId = req.id;
+    const user = await getOrSetCache(`user:profile:${userId}`, async () => {
+         return await User.findById(userId)
+           .select("-password")
+           .populate("enrolledCourses");
+    }, 3600);
+
     if (!user) {
       return res.status(400).json({ message: "User not found" });
     }
+
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.set('Pragma', 'no-cache');
     res.set('Expires', '0');
+    
     return res.status(200).json(user);
   } catch (error) {
     return res.status(500).json({ message: `getCurrentUser error ${error}` });
   }
 };
+
 
 export const updateProfile = async (req, res) => {
   try {
@@ -46,9 +54,7 @@ export const updateProfile = async (req, res) => {
     if (req.file) {
       photoUrl = req.file.path;
       if (user.photoUrl) {
-        const oldPublicId =
-          "VirtualCourses/" + getPublicIdFromUrl(user.photoUrl);
-
+        const oldPublicId = "VirtualCourses/" + getPublicIdFromUrl(user.photoUrl);
         if (oldPublicId) {
           await cloudinary.uploader.destroy(oldPublicId, (err, result) => {
             if (err) console.log("Cloudinary delete error:", err);
@@ -64,10 +70,14 @@ export const updateProfile = async (req, res) => {
 
     await user.save();
 
-    // Re-fetch the user to ensure data consistency (populate fields + exclude password)
     const updatedUser = await User.findById(userId)
       .populate("enrolledCourses")
       .select("-password");
+
+    await clearCache(
+        `user:profile:${userId}`, 
+        `creator:${userId}`
+    );
 
     return res.status(200).json(updatedUser);
   } catch (error) {

@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import generateToken from "../config/token.js";
 import otpGenerator from "otp-generator";
 import sendMail from "../config/sendMail.js";
+import redis, { clearCache } from "../config/redis.js";
 
 // ✅ Standard Cookie Options 
 const cookieOptions = {
@@ -68,7 +69,7 @@ export const login = async(req,res)=>{
         let token = await generateToken(user._id);
 
         res.cookie("token", token, cookieOptions);
-
+        await clearCache(`user:profile:${user._id}`);
         return res.status(200).json({
               message: `Welcome back ${user.name}`,
               token: token, 
@@ -118,7 +119,7 @@ export const googleAuth = async (req, res) => {
         let token = await generateToken(user._id);
 
         res.cookie("token", token, cookieOptions);
-
+        await clearCache(`user:profile:${user._id}`);
         return res.status(200).json({
             message: `Welcome back ${user.name}`,
             user,
@@ -143,8 +144,14 @@ export const sendOTP = async(req,res)=>{
         upperCaseAlphabets: false, 
         specialChars: false 
         }).toString();
-        user.resetOtp = otp;
-        user.otpExpires = Date.now() + 5*60*1000;
+        if (redis && redis.status === "ready") {
+             await redis.set(`otp:${email}`, otp, "EX", 300);
+        } else {
+             // Fallback to Mongo if Redis is down
+             user.resetOtp = otp;
+             user.otpExpires = Date.now() + 5*60*1000;
+             await user.save();
+        }
         user.isOtpVerified = false;
         await user.save();
         await sendMail(email,otp);
@@ -156,15 +163,35 @@ export const sendOTP = async(req,res)=>{
 
 export const verifyOTP = async (req,res) => {
    try {
-    const {email,otp} = req.body;
+    const {email, otp} = req.body;
     const user = await User.findOne({email});
-    if(!user || user.resetOtp !=otp || user.otpExpires < Date.now()){
-        return res.status(404).json({message:"Invalid OTP"})
+    if(!user) return res.status(404).json({message:"User not found"});
+
+    let isValid = false;
+
+    if (redis && redis.status === "ready") {
+        const storedOtp = await redis.get(`otp:${email}`);
+        if (storedOtp && storedOtp === otp) {
+            isValid = true;
+            // Delete OTP after successful use
+            await redis.del(`otp:${email}`); 
+        }
+    } 
+    //Fallback check (MongoDB) if Redis failed
+    if (!isValid && user.resetOtp === otp && user.otpExpires > Date.now()) {
+        isValid = true;
+        user.resetOtp = undefined;
+        user.otpExpires = undefined;
     }
+
+    if(!isValid){
+        return res.status(400).json({message:"Invalid or Expired OTP"})
+    }
+
+    // Mark as verified in DB (Required for resetPassword)
     user.isOtpVerified = true;
-    user.resetOtp = undefined;
-    user.otpExpires = undefined;
     await user.save();
+
     return res.status(200).json({message:"OTP verified successfully"})
    } catch (error) {
      return res.status(500).json({message:`Verify otp error ${error.message}`})
