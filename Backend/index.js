@@ -35,16 +35,13 @@ app.use("/api/review", reviewRouter);
 app.use("/api/upload", uploadRouter);
 
 app.get("/", (req, res) => {
-    res.send("Hello from server");
+    res.send("Server is running!");
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000 ;
 
-// Only listen to port in Local Development
-if (process.env.NODE_ENV !== "production") {
-    app.listen(PORT, () => {
-        console.log(`Server is running on http://localhost:${PORT}`);
-    });
-}
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
 
 export default app;

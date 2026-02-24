@@ -26,7 +26,7 @@ import useGetAllReviews from './customHooks/getAllReviews.js'
 import SearchWithAi from './pages/SearchWithAi.jsx'
 import { ClipLoader } from 'react-spinners';
 import { DotPattern } from './components/DotPattern.jsx';
-export const serverUrl = "https://virtual-courses-two.vercel.app";
+export const serverUrl = "https://virtualcourses-ize6.onrender.com";
 
 
 function App() {
