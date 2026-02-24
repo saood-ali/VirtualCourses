@@ -31,14 +31,16 @@ const downloadFile = async (url, destPath) => {
   });
 };
 
-export const searchWithAi = async(req,res)=>{
-   try {
-    const {input} = req.body;
-    if(!input){
-        return res.status(400).json({message:"Search Query is required"})
-    }
-    const ai = new GoogleGenAI({apiKey:process.env.GEMINI_API_KEY});
-    const prompt = `You are an intelligent assistant for an
+export const searchWithAi = async (req, res) => {
+    try {
+        const { input } = req.body;
+        if (!input) {
+            return res.status(400).json({ message: "Search Query is required" });
+        }
+
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
+
+        const prompt = `You are an intelligent assistant for an
 LMS platform. A user will type any query about what they
 want to learn. Your task is to understand the intent and
 return one ** most relevant keyword ** from the following
@@ -62,42 +64,46 @@ matches the query. Do not explain anything. No extra text.
 
 Query: ${input}`;
 
-    const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: prompt,
-   });
-   const keyword = response.text ? response.text() : response.text;
-   const courses = await Course.find({
-        isPublished:true,
-        $or:[
-            {title:{$regex:input, $options:"i"}},
-            {subTitle: {$regex:input,$options:"i"}},
-            {description:{$regex:input,$options:"i"}},
-            {category:{$regex:input,$options:"i"}},
-            {level:{$regex:input,$options:"i"}}
-        ]
-    });
-    if(courses.length > 0){
-      return res.status(200).json(courses)
-    }
-    else{
+        const result = await model.generateContent(prompt);
+        const response = result.response;
+        const keyword = response.text().trim(); 
+
+        console.log(`[AI Search] Input: "${input}" -> Keyword: "${keyword}"`);
+
+        // --- Database Search (Unchanged) ---
         const courses = await Course.find({
-        isPublished:true,
-        $or:[
-            {title:{$regex:keyword, $options:"i"}},
-            {subTitle: {$regex:keyword,$options:"i"}},
-            {description:{$regex:keyword,$options:"i"}},
-            {category:{$regex:keyword,$options:"i"}},
-            {level:{$regex:keyword,$options:"i"}}
-        ]
-    });
-    return res.status(200).json(courses)
+            isPublished: true,
+            $or: [
+                { title: { $regex: input, $options: "i" } },
+                { subTitle: { $regex: input, $options: "i" } },
+                { description: { $regex: input, $options: "i" } },
+                { category: { $regex: input, $options: "i" } },
+                { level: { $regex: input, $options: "i" } }
+            ]
+        });
+
+        if (courses.length > 0) {
+            return res.status(200).json(courses);
+        } else {
+            // Fallback: Search using the AI Keyword
+            const aiCourses = await Course.find({
+                isPublished: true,
+                $or: [
+                    { title: { $regex: keyword, $options: "i" } },
+                    { subTitle: { $regex: keyword, $options: "i" } },
+                    { description: { $regex: keyword, $options: "i" } },
+                    { category: { $regex: keyword, $options: "i" } },
+                    { level: { $regex: keyword, $options: "i" } }
+                ]
+            });
+            return res.status(200).json(aiCourses);
+        }
+
+    } catch (error) {
+        console.error("Search Error:", error);
+        return res.status(500).json({ message: `Failed to search: ${error.message}` });
     }
-    
-   } catch (error) {
-    return res.status(500).json({message:`Failed to search ${error.message}`})
-   }
-}
+};
 
 export const explainLecture = async (req, res) => {
     // Define the temp path outside try block for cleanup in finally
