@@ -106,7 +106,7 @@ export const explainLecture = async (req, res) => {
 
     try {
       const { lectureId, currentTimestamp, userQuestion } = req.body;
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); 
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" }); 
   
       if (!lectureId) {
         return res.status(400).json({ message: "Lecture ID is required" });
@@ -166,7 +166,7 @@ export const explainLecture = async (req, res) => {
 
               // 5. Save to DB
               lecture.transcript = transcriptText;
-              await lecture.save();
+              await lecture.save(); 
               console.log("💾 Transcript saved to database!");
 
           } catch (innerError) {
