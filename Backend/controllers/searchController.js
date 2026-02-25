@@ -9,11 +9,10 @@ import axios from "axios";
 import dotenv from "dotenv";
 dotenv.config();
 
-// Initialize Google AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
 
-// --- Helper: Download File ---
+// Helper: Download File
 const downloadFile = async (url, destPath) => {
   const writer = fs.createWriteStream(destPath);
   const response = await axios({
@@ -28,23 +27,12 @@ const downloadFile = async (url, destPath) => {
   });
 };
 
-// --- Debug Helper: List Models ---
-const logAvailableModels = async () => {
-    try {
-        const modelList = await genAI.getGenerativeModelFactory().listModels();
-        console.log("📋 AVAILABLE MODELS:", modelList);
-    } catch (e) {
-        console.log("⚠️ Could not list models:", e.message);
-    }
-};
-
-// --- SEARCH FEATURE ---
+// SEARCH FEATURE 
 export const searchWithAi = async (req, res) => {
     try {
         const { input } = req.body;
         if (!input) return res.status(400).json({ message: "Search Query is required" });
 
-        // Use the standard stable model name
         const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
         const prompt = `You are an intelligent assistant for an LMS. Return ONE keyword from this list: 
@@ -80,7 +68,7 @@ export const searchWithAi = async (req, res) => {
     }
 };
 
-// --- EXPLAIN LECTURE FEATURE ---
+// EXPLAIN LECTURE FEATURE 
 export const explainLecture = async (req, res) => {
     let tempFilePath = null; 
     let uploadResult = null;
@@ -88,7 +76,6 @@ export const explainLecture = async (req, res) => {
     try {
       const { lectureId, currentTimestamp, userQuestion } = req.body;
       
-      // ✅ Use standard name. If this fails, we catch it.
       const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" }); 
   
       if (!lectureId) return res.status(400).json({ message: "Lecture ID is required" });
@@ -98,7 +85,7 @@ export const explainLecture = async (req, res) => {
   
       let transcriptText = lecture.transcript;
   
-      // --- AUTO-GENERATE TRANSCRIPT ---
+      // AUTO-GENERATE TRANSCRIPT 
       if (!transcriptText || transcriptText.length < 50) {
           console.log(`⚠️ Transcript missing for "${lecture.lectureTitle}". Starting analysis...`);
           
@@ -140,16 +127,14 @@ export const explainLecture = async (req, res) => {
               // Fallback logic
               transcriptText = `Transcript unavailable for "${lecture.lectureTitle}".`;
               
-              // 🔍 DEBUG: If 404, list what IS available so we can fix it.
               if (innerError.message.includes("404")) {
                    console.log("🔍 DIAGNOSTIC: Listing available models...");
-                   // Note: This requires a separate valid request, implementing simplistic log for now
                    console.log("Check API Key permissions in Google AI Studio.");
               }
           }
       }
   
-      // --- Answer Question ---
+      //  Answer Question 
       const prompt = `
         You are an expert coding tutor.
         TRANSCRIPT: ${transcriptText.substring(0, 20000)}
