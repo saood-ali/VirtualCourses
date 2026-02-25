@@ -106,12 +106,16 @@ Query: ${input}`;
 };
 
 export const explainLecture = async (req, res) => {
-    // Define the temp path outside try block for cleanup in finally
+    // Define temp path outside try block for cleanup
     let tempFilePath = null; 
     let uploadResult = null;
 
     try {
       const { lectureId, currentTimestamp, userQuestion } = req.body;
+      
+      // ✅ DEBUG LOG: This proves if the new code is live
+      console.log("🟢 [AI START] explainLecture V2 called. Model: gemini-1.5-flash-001");
+
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" }); 
   
       if (!lectureId) {
@@ -123,40 +127,31 @@ export const explainLecture = async (req, res) => {
   
       let transcriptText = lecture.transcript;
   
-      // AUTO-GENERATE TRANSCRIPT (If missing) 
+      // --- AUTO-GENERATE TRANSCRIPT ---
       if (!transcriptText || transcriptText.length < 50) {
-          console.log(`⚠️ Transcript missing for "${lecture.lectureTitle}". Starting analysis...`);
+          console.log(`⚠️ Transcript missing. Starting analysis for: ${lecture.lectureTitle}`);
           
-          // Create a unique temp filename
           tempFilePath = path.join(os.tmpdir(), `lecture-${lectureId}-${Date.now()}.mp4`);
           
           try {
-              // 1. Download
-              console.log("⬇️ Downloading video from Cloudinary...");
+              console.log("⬇️ Downloading video...");
               await downloadFile(lecture.videoUrl, tempFilePath);
               
-              // 2. Upload to Google
               console.log("⬆️ Uploading to Gemini...");
               uploadResult = await fileManager.uploadFile(tempFilePath, {
                   mimeType: "video/mp4",
                   displayName: `Lecture_${lectureId}`,
               });
               
-              // 3. Wait for Processing
               let file = await fileManager.getFile(uploadResult.file.name);
-              process.stdout.write("⏳ Processing video");
               while (file.state === "PROCESSING") {
-                  process.stdout.write(".");
+                  console.log("⏳ Processing video...");
                   await new Promise((resolve) => setTimeout(resolve, 2000));
                   file = await fileManager.getFile(uploadResult.file.name);
               }
-              console.log("\n✅ Video processed.");
 
-              if (file.state === "FAILED") {
-                  throw new Error("Video processing failed by Google AI");
-              }
+              if (file.state === "FAILED") throw new Error("Video processing failed.");
 
-              // 4. Generate Transcript
               console.log("🧠 Generating transcript...");
               const result = await model.generateContent([
                   {
@@ -165,62 +160,39 @@ export const explainLecture = async (req, res) => {
                           fileUri: uploadResult.file.uri
                       }
                   },
-                  { text: "Generate a detailed transcript of the spoken audio in this video. Ignore background noise." }
+                  { text: "Generate a detailed transcript of the spoken audio." }
               ]);
 
               transcriptText = result.response.text();
-
-              // 5. Save to DB
               lecture.transcript = transcriptText;
               await lecture.save(); 
-              console.log("💾 Transcript saved to database!");
+              console.log("💾 Transcript saved!");
 
           } catch (innerError) {
               console.error("❌ TRANSCRIPTION FAILED:", innerError.message);
-              transcriptText = "I apologize, I am currently unable to analyze the video audio directly. I will answer based on the lecture title and general knowledge.";
+              // Fallback text so the app doesn't crash
+              transcriptText = "Transcript unavailable. I will answer based on the lecture title.";
           }
       }
   
-      // Answer Question 
+      // --- Answer Question ---
       const prompt = `
         You are an expert coding tutor.
-        
-        TRANSCRIPT START 
-        ${transcriptText.substring(0, 20000)} 
-        TRANSCRIPT END 
-        
-        CONTEXT:
-        The student paused the video at timestamp: ${currentTimestamp} seconds.
-        
-        STUDENT QUESTION: "${userQuestion || "Explain the concept being discussed right now."}"
-        
-        INSTRUCTIONS:
-        1. Answer strictly based on the provided transcript context if available.
-        2. If the transcript is missing, answer based on the topic "${lecture.lectureTitle}".
-        3. Keep the explanation clear and short (max 3 sentences).
+        TRANSCRIPT: ${transcriptText.substring(0, 20000)}
+        QUESTION: "${userQuestion}" at ${currentTimestamp}s.
+        INSTRUCTION: Answer in 2 sentences.
       `;
   
       const response = await model.generateContent(prompt);
       const answer = response.response.text();
   
-      return res.status(200).json({ 
-        success: true, 
-        answer: answer 
-      });
+      return res.status(200).json({ success: true, answer: answer });
   
     } catch (error) {
       console.error("🔥 CONTROLLER ERROR:", error);
-      return res.status(500).json({ message: "Failed to generate explanation" });
+      return res.status(500).json({ message: "AI Error: " + error.message });
     } finally {
-        // CLEANUP: Delete temp file
-        if (tempFilePath && fs.existsSync(tempFilePath)) {
-            fs.unlinkSync(tempFilePath);
-        }
-        // CLEANUP: Delete from Gemini 
-        if (uploadResult) {
-            try {
-                await fileManager.deleteFile(uploadResult.file.name);
-            } catch (e) { console.log("Cleanup warning:", e.message); }
-        }
+        if (tempFilePath && fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
+        if (uploadResult) fileManager.deleteFile(uploadResult.file.name).catch(e => {});
     }
 };
