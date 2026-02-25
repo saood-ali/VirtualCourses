@@ -19,13 +19,13 @@ import AllCourses from './pages/AllCourses.jsx'
 import CreateLecture from './pages/Educator/CreateLecture.jsx'
 import EditLecture from './pages/Educator/EditLecture.jsx'
 import ViewCourse from './pages/ViewCourse.jsx'
-import ScrollToTop from './components/ScrollToTop.jsx'
-import ViewLectures from './pages/ViewLectures.jsx'
+import ScrollToTop from './components/ScrollToTop.jsx'    
 import MyEnrolledCourses from './pages/MyEnrolledCourses.jsx'
 import useGetAllReviews from './customHooks/getAllReviews.js'
 import SearchWithAi from './pages/SearchWithAi.jsx'
 import { ClipLoader } from 'react-spinners';
 import { DotPattern } from './components/DotPattern.jsx';
+import LiveClass from "./pages/LiveClass.jsx";
 export const serverUrl = "https://virtualcourses-ize6.onrender.com";
 
 
@@ -72,9 +72,9 @@ function App() {
         <Route path='/editlecture/:courseId/:lectureId' element={userData?.role === "educator"? <EditLecture/> : <Navigate to={"/signup"}/>} />
         <Route path='/course/:courseId' element={<ViewCourse/>} />
         <Route path='/viewcourse/:courseId' element={userData ? <ViewCourse/> : <Navigate to={"/signup"}/>} />
-        <Route path='/viewlecture/:courseId' element={userData ? <ViewLectures/> : <Navigate to={"/signup"}/>} />
         <Route path='/mycourses' element={userData ? <MyEnrolledCourses/> : <Navigate to={"/signup"}/>} />
         <Route path='/search' element={userData ? <SearchWithAi/> : <Navigate to={"/signup"}/>} />  
+        <Route path="/course/live/:courseId" element={<LiveClass />} />
       </Routes>
     </div>
   )

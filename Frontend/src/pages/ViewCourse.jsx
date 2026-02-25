@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { setSelectedCourse } from "../redux/courseSlice.js";
 import img from "../assets/empty_folder.png";
-import { FaStar, FaPlayCircle, FaLock } from "react-icons/fa";
+import { FaStar, FaPlayCircle, FaLock, FaBroadcastTower } from "react-icons/fa"; 
 import axios from "axios";
 import { serverUrl } from "../App.jsx";
 import Card from "../components/Card.jsx";
@@ -22,6 +22,7 @@ function ViewCourse() {
   const [selectedLecture, setSelectedLecture] = useState(null);
   const [creatorData, setCreatorData] = useState(null);
   const [prevCourseId, setPrevCourseId] = useState(courseId);
+  const [isLive, setIsLive] = useState(false);
 
   // Reference for the video player
   const videoRef = useRef(null);
@@ -40,6 +41,32 @@ function ViewCourse() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [courseId]);
+
+  //Check Live Status & Poll every 30 seconds
+  useEffect(() => {
+    const checkLiveStatus = async () => {
+      try {
+        // We use a simple GET request to check if a session exists
+        const res = await axios.get(`${serverUrl}/api/live/details/${courseId}`, {
+           withCredentials: true 
+        });
+        if (res.data && res.data.youtubeVideoId) {
+          setIsLive(true);
+        } else {
+          setIsLive(false);
+        }
+      } catch (error) {
+        setIsLive(false);
+        console.error("Failed to fetch live status:", error);
+        
+      }
+    };
+
+    checkLiveStatus();
+    const interval = setInterval(checkLiveStatus, 30000); // Check every 30s
+    return () => clearInterval(interval);
+  }, [courseId]);
+
 
   const isAlreadyEnrolled = userData?.enrolledCourses?.some(
     (c) =>
@@ -326,6 +353,25 @@ function ViewCourse() {
                     {avgRating}
                   </span>
                 </div>
+                
+                {/* Live Class Button  */}
+                {(isLive || userData?.role === 'instructor') && (
+                    <div className="w-full my-3">
+                        <button 
+                            onClick={() => navigate(`/course/live/${courseId}`)}
+                            className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-bold text-white shadow-lg transition-all duration-300
+                            ${isLive 
+                                ? "bg-red-600 hover:bg-red-700 animate-pulse ring-4 ring-red-200" 
+                                : "bg-indigo-600 hover:bg-indigo-700"
+                            }`}
+                        >
+                            <FaBroadcastTower className={isLive ? "animate-bounce" : ""} />
+                            {isLive ? "JOIN LIVE DOUBT CLASS NOW" : "START LIVE SESSION"}
+                        </button>
+                        {isLive && <p className="text-center text-xs text-red-500 font-bold mt-1">🔴 Live Session in Progress!</p>}
+                    </div>
+                )}
+
                 <div>
                   <span className="text-xl font-semibold text-black">
                     ₹{selectedCourse?.price}
@@ -496,7 +542,7 @@ function ViewCourse() {
                      <AIExplainer 
                         lectureId={selectedLecture._id} 
                         videoRef={videoRef} 
-                     />
+                      />
                   </div>
               )}
 

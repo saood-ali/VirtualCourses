@@ -28,3 +28,31 @@ export const getLiveSessionDetails = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+export const startLiveSession = async (req, res) => {
+  try {
+    const { courseId, youtubeId, title } = req.body;
+    if (!courseId || !youtubeId) {
+      return res.status(400).json({ message: "Course ID and YouTube ID are required." });
+    }
+
+    const session = await LiveSession.findOneAndUpdate(
+      { courseId },
+      { 
+        $set: { 
+          youtubeId, 
+          title: title || "Live Doubt Session",
+          isLive: true,
+          instructor: req.user._id 
+        } 
+      },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    );
+
+    res.status(200).json({ success: true, session });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to start live session" });
+  }
+};
