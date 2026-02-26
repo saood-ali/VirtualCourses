@@ -22,9 +22,9 @@ const app = express();
 const httpServer = createServer(app); 
 
 const allowedOrigins = [
-  "http://localhost:5173", 
-  "https://virtual-courses-frontend.vercel.app"
-];
+  "http://localhost:5173",
+  process.env.FRONTEND_URL
+].filter(Boolean);
 
 app.use(express.json({ limit: "10mb" })); 
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));

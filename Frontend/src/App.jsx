@@ -1,4 +1,4 @@
-export const serverUrl = "https://virtualcourses-ize6.onrender.com";
+export const serverUrl = import.meta.env.VITE_SERVER_URL;
 import Home from './pages/Home.jsx';
 import SignUp from './pages/SignUp.jsx';
 import Login from './pages/Login.jsx';

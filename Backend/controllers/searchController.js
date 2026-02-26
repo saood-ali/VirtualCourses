@@ -33,7 +33,7 @@ export const searchWithAi = async (req, res) => {
         const { input } = req.body;
         if (!input) return res.status(400).json({ message: "Search Query is required" });
 
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+        const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL });
 
         const prompt = `You are an intelligent assistant for an LMS. Return ONE keyword from this list: 
         [App Development, AI/ML, AI Tools, Data Science, Data Analytics, Ethical Hacking, UI UX Designing, Web Development, Others, Beginner, Intermediate, Advanced]
@@ -76,7 +76,7 @@ export const explainLecture = async (req, res) => {
     try {
       const { lectureId, currentTimestamp, userQuestion } = req.body;
       
-      const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" }); 
+      const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL }); 
   
       if (!lectureId) return res.status(400).json({ message: "Lecture ID is required" });
   
