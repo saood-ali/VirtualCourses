@@ -14,8 +14,10 @@ export const getLiveSessionDetails = async (req, res) => {
     }
 
     res.status(200).json({ 
-      youtubeVideoId: liveSession.youtubeId,
-      socketRoomId: `live_chat_${courseId}`,
+      success: true,
+      roomID: courseId, 
+      title: liveSession.title,
+      educatorName: liveSession.educator ? liveSession.educator.name : "Educator",
       user: {
         name: req.user.name,
         _id: req.user._id,
@@ -29,20 +31,21 @@ export const getLiveSessionDetails = async (req, res) => {
   }
 };
 
+
 export const startLiveSession = async (req, res) => {
   try {
-    const { courseId, youtubeId, title } = req.body;
-    if (!courseId || !youtubeId) {
-      return res.status(400).json({ message: "Course ID and YouTube ID are required." });
+    const { courseId, title, isLive } = req.body;
+    
+    if (!courseId) {
+      return res.status(400).json({ message: "Course ID is required." });
     }
 
     const session = await LiveSession.findOneAndUpdate(
       { courseId },
       { 
         $set: { 
-          youtubeId, 
-          title: title || "Live Doubt Session",
-          isLive: true,
+          title: title || "Live Interactive Class",
+          isLive: isLive,
           educator: req.user._id 
         } 
       },
@@ -52,7 +55,7 @@ export const startLiveSession = async (req, res) => {
     res.status(200).json({ success: true, session });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to start live session" });
+    console.error("Failed to update session:", error);
+    res.status(500).json({ message: "Failed to update live session status" });
   }
 };

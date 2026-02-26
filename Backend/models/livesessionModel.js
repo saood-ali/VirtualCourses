@@ -6,19 +6,17 @@ const liveSessionSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Course",
       required: true,
-    },
-    youtubeId: {
-      type: String,
-      required: true, 
+      unique: true,
     },
     title: {
       type: String,
       required: true,
       trim: true,
+      default: "Live Interactive Class"
     },
     isLive: {
       type: Boolean,
-      default: true, 
+      default: false,
     },
     educator: {
       type: mongoose.Schema.Types.ObjectId,
@@ -26,7 +24,7 @@ const liveSessionSchema = new mongoose.Schema(
       required: true,
     },
   },
-  { timestamps: true } 
+  { timestamps: true }
 );
 
 const LiveSession = mongoose.model("LiveSession", liveSessionSchema);
