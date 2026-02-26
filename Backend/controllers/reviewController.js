@@ -27,7 +27,7 @@ export const createReview = async(req,res) =>{
         await clearCache(
             `course:${courseId}`,                 // 1. Clear Course Details (to show new review there)
             `courses:published`,                  // 2. Clear Home Page (to update Star Rating on card)
-            `creator:courses:${course.creator}`,  // 3. Clear Instructor Dashboard (to update their stats)
+            `creator:courses:${course.creator}`,  // 3. Clear educator Dashboard (to update their stats)
             `reviews:all`                         // 4. Clear the global reviews list
         );
         return res.status(201).json(review)

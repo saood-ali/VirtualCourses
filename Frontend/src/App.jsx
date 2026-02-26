@@ -1,4 +1,4 @@
-
+export const serverUrl = "https://virtualcourses-ize6.onrender.com";
 import Home from './pages/Home.jsx';
 import SignUp from './pages/SignUp.jsx';
 import Login from './pages/Login.jsx';
@@ -26,7 +26,6 @@ import SearchWithAi from './pages/SearchWithAi.jsx'
 import { ClipLoader } from 'react-spinners';
 import { DotPattern } from './components/DotPattern.jsx';
 import LiveClass from "./pages/LiveClass.jsx";
-export const serverUrl = "https://virtualcourses-ize6.onrender.com";
 
 
 function App() {

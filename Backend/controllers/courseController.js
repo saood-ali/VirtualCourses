@@ -49,7 +49,7 @@ export const getPublishedCourses = async(req,res)=>{
 export const getCreatorCourses = async(req,res)=>{
     try {
         const userId = req.userId;
-        // 🚀 CACHE: 10 Mins (600s). Instructors refresh this page often.
+        // 🚀 CACHE: 10 Mins (600s). educators refresh this page often.
         const courses = await getOrSetCache(`creator:courses:${userId}`, async () => {
              return await Course.find({creator:userId});
         }, 600);

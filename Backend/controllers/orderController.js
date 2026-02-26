@@ -49,7 +49,7 @@ export const verifyPayment = async(req,res)=>{
 
             await clearCache(
                 `user:profile:${userId}`,             // User's dashboard
-                `stats:instructor:${course.creator}`, // Instructor's dashboard stats
+                `stats:educator:${course.creator}`, // educator's dashboard stats
                 `course:${courseId}`                  // Course landing page stats
             );
 

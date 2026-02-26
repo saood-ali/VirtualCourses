@@ -355,7 +355,7 @@ function ViewCourse() {
                 </div>
                 
                 {/* Live Class Button  */}
-                {(isLive || userData?.role === 'instructor') && (
+                {(isLive || userData?.role === 'educator') && (
                     <div className="w-full my-3">
                         <button 
                             onClick={() => navigate(`/course/live/${courseId}`)}

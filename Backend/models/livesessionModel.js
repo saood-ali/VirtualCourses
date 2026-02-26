@@ -20,7 +20,7 @@ const liveSessionSchema = new mongoose.Schema(
       type: Boolean,
       default: true, 
     },
-    instructor: {
+    educator: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,

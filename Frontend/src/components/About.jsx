@@ -31,7 +31,7 @@ function About() {
         </div>
         <div className="text-[15px]">
           We provide a modern Learning Management System to simplify online
-          education, track progress, and enhance student-instructor
+          education, track progress, and enhance student-educator
           collaboration efficiently .
         </div>
         <div className="w-full lg:w-[60%]">

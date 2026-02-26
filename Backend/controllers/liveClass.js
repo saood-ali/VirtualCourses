@@ -43,7 +43,7 @@ export const startLiveSession = async (req, res) => {
           youtubeId, 
           title: title || "Live Doubt Session",
           isLive: true,
-          instructor: req.user._id 
+          educator: req.user._id 
         } 
       },
       { new: true, upsert: true, setDefaultsOnInsert: true }

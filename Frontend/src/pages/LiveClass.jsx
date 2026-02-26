@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import axios from 'axios';
-import { serverUrl } from '../App.jsx'; // Your API URL constant
+const serverUrl = "https://virtualcourses-ize6.onrender.com"; // Your API URL constant
 
 // Connect to Backend Socket
 const socket = io(serverUrl); 
@@ -19,7 +19,7 @@ const LiveClass = () => {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
   
-  // Instructor "Go Live" State
+  // educator "Go Live" State
   const [youtubeLink, setYoutubeLink] = useState("");
 
 const fetchSession = useCallback(async () => {
@@ -58,7 +58,7 @@ const fetchSession = useCallback(async () => {
         room: videoDetails.socketRoomId,
         user: userData?.name || "Anonymous",
         text: input,
-        isInstructor: userData?.role === 'instructor'
+        iseducator: userData?.role === 'educator'
     };
 
     socket.emit("send_message", msgData);
@@ -66,7 +66,7 @@ const fetchSession = useCallback(async () => {
     setInput("");
   };
 
-  // 3. Handle "Go Live" (Instructor Only)
+  // 3. Handle "Go Live" (educator Only)
   const handleGoLive = async () => {
     try {
         // Extract ID from URL (supports full URL or just ID)
@@ -95,8 +95,8 @@ const fetchSession = useCallback(async () => {
 
   if (loading) return <div className="h-screen bg-black text-white flex items-center justify-center">Loading Studio...</div>;
 
-  // --- SCENARIO A: Instructor Setup Screen (No Active Class) ---
-  if (!videoDetails && userData?.role === 'instructor') {
+  // --- SCENARIO A: educator Setup Screen (No Active Class) ---
+  if (!videoDetails && userData?.role === 'educator') {
       return (
           <div className="h-screen bg-gray-900 flex flex-col items-center justify-center text-white p-6">
               <div className="bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-md border border-gray-700">
@@ -135,7 +135,7 @@ const fetchSession = useCallback(async () => {
         <div className="flex h-screen bg-gray-900 items-center justify-center flex-col text-center p-4">
             <div className="text-6xl mb-4">☕</div>
             <h2 className="text-2xl font-bold text-gray-200">No Live Class Active</h2>
-            <p className="text-gray-500 mt-2">The instructor hasn't started the session yet. <br/>Please refresh in a few minutes.</p>
+            <p className="text-gray-500 mt-2">The educator hasn't started the session yet. <br/>Please refresh in a few minutes.</p>
             <button onClick={() => navigate(-1)} className="mt-6 text-blue-400 hover:underline">Go Back</button>
         </div>
       );
@@ -164,14 +164,14 @@ const fetchSession = useCallback(async () => {
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.map((m, i) => (
-                <div key={i} className={`flex flex-col ${m.isInstructor ? 'items-end' : 'items-start'}`}>
+                <div key={i} className={`flex flex-col ${m.iseducator ? 'items-end' : 'items-start'}`}>
                     <div className="flex items-center gap-2">
-                        <span className={`text-[10px] font-bold ${m.isInstructor ? 'text-yellow-400' : 'text-gray-400'}`}>
-                            {m.user} {m.isInstructor && '★'}
+                        <span className={`text-[10px] font-bold ${m.iseducator ? 'text-yellow-400' : 'text-gray-400'}`}>
+                            {m.user} {m.iseducator && '★'}
                         </span>
                     </div>
                     <div className={`px-3 py-2 rounded-lg text-sm max-w-[90%] ${
-                        m.isInstructor 
+                        m.iseducator 
                         ? 'bg-yellow-600/20 text-yellow-200 border border-yellow-600/50' 
                         : 'bg-gray-700 text-gray-100'
                     }`}>
