@@ -29,9 +29,16 @@ const useGetCurrentUser = () => {
           throw new Error("Invalid user data received");
         }
       } catch (error) {
-        console.log("Auto-login failed:", error);
-        localStorage.removeItem("token");
-        dispatch(setUserData(null));
+        // Only force-logout on explicit 401 Unauthorized.
+        // Network errors, 5xx, etc. should NOT wipe a valid cached session.
+        if (error.response?.status === 401) {
+          console.log("Session expired or invalid:", error);
+          localStorage.removeItem("token");
+          dispatch(setUserData(null));
+        } else {
+          console.log("Could not verify session (non-auth error):", error?.message);
+          // Keep whatever is already in the store (re-hydrated from localStorage)
+        }
       } finally {
         setTimeout(() => {
             setIsLoading(false);
