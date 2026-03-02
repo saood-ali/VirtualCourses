@@ -11,8 +11,11 @@ export const generateSignature = (req, res) => {
   try {
     const timestamp = Math.round(new Date().getTime() / 1000);
 
+    // Cloudinary signature rules: DO NOT include file, cloud_name, resource_type,
+    // or api_key in the signature — only include body params like folder, timestamp, etc.
     const params = {
-      timestamp: timestamp,
+      folder: "VirtualCourses",
+      timestamp,
     };
 
     const signature = cloudinary.utils.api_sign_request(
@@ -25,6 +28,7 @@ export const generateSignature = (req, res) => {
       timestamp,
       apiKey: process.env.CLOUDINARY_API_KEY,
       cloudName: process.env.CLOUDINARY_NAME,
+      folder: params.folder,
     });
   } catch (error) {
     console.error(error);

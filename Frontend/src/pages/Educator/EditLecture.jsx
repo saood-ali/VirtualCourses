@@ -63,18 +63,32 @@ function EditLecture() {
 
   // --- Helper: Upload Video ---
   const uploadVideoToCloudinary = async (file) => {
+    let signData;
+    
+    // Step 1: Get signature from backend
     try {
-      const { data: signData } = await axios.get(`${serverUrl}/api/upload/signature`, {
-        withCredentials: true
+      const response = await axios.get(`${serverUrl}/api/upload/signature`, {
+        withCredentials: true,
+        headers: {
+          "ngrok-skip-browser-warning": "69420"
+        }
       });
+      signData = response.data;
+    } catch (error) {
+      console.error("Signature Fetch Error:", error.response?.data || error.message);
+      throw new Error("Failed to get upload signature from server: " + (error.message || ""));
+    }
 
-      const { signature, timestamp, apiKey, cloudName } = signData;
+    // Step 2: Upload to Cloudinary
+    try {
+      const { signature, timestamp, apiKey, cloudName, folder } = signData;
 
       const formData = new FormData();
       formData.append("file", file);
       formData.append("api_key", apiKey);
       formData.append("timestamp", timestamp);
       formData.append("signature", signature);
+      formData.append("folder", folder);
 
       const uploadRes = await axios.post(
         `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`,
@@ -89,8 +103,8 @@ function EditLecture() {
 
       return uploadRes.data.secure_url;
     } catch (error) {
-      console.error("Cloudinary Upload Error:", error);
-      throw new Error("Video upload failed");
+      console.error("Cloudinary Upload Error:", error.response?.data || error.message);
+      throw new Error(error.response?.data?.error?.message || "Video upload to Cloudinary failed");
     }
   };
 

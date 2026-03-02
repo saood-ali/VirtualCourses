@@ -12,8 +12,8 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: "VirtualCourses",
-    resource_type: "image", // Automatically detect image/video
-    allowedFormats: ["jpg", "png", "jpeg"],
+    resource_type: "auto",  // Handles images AND videos
+    allowedFormats: ["jpg", "png", "jpeg", "webp", "mp4", "mov", "avi", "mkv", "webm"],
   },
 });
 
