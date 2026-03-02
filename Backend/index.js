@@ -31,7 +31,7 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 
 app.use(cors({
-    origin: allowedOrigins,
+    origin: true, // Temporarily allow ALL origins
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Cache-Control", "Expires", "Pragma", "ngrok-skip-browser-warning"]     

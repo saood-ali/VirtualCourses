@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
-import axios from 'axios';
-import { serverUrl } from '../App.jsx';
+import axiosClient from "../config/axiosClient.js";
 import { useDispatch } from 'react-redux';
 import { setCourseData } from '../redux/courseSlice.js';
 
@@ -9,7 +8,7 @@ const useGetPublishedCourse = () => {
     useEffect(()=>{
         const getCourseData = async () => {
             try {
-                const result = await axios.get(`${serverUrl}/api/course/getpublished`,{withCredentials:true});
+                const result = await axiosClient.get(`/api/course/getpublished?t=${Date.now()}`);        
                 dispatch(setCourseData(result.data));  
                 console.log(result.data);
             } catch (error) {

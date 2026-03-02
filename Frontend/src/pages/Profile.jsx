@@ -1,10 +1,9 @@
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { BsArrowReturnLeft } from "react-icons/bs";
-import axios from "axios";
 import { toast } from "react-toastify";
 import { setUserData } from "../redux/userSlice.js";
-import { serverUrl } from "../App.jsx";
+import axiosClient from "../config/axiosClient.js";
 import Iridescence from "../components/Iridescence.jsx";
 
 function Profile() {
@@ -14,9 +13,7 @@ function Profile() {
 
   const handleLogout = async () => {
     try {
-      await axios.post(`${serverUrl}/api/auth/logOut`, {}, {
-        withCredentials: true,
-      });
+      await axiosClient.post(`/api/auth/logout`);
 
       dispatch(setUserData(null));
       localStorage.removeItem("token");

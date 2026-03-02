@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { BsArrowReturnLeft } from "react-icons/bs";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { serverUrl } from "../../App.jsx";
+import axiosClient from "../../config/axiosClient.js";
 import { toast } from "react-toastify";
 import { ClipLoader } from "react-spinners";
 import { DotPattern } from "../../components/DotPattern.jsx";
@@ -20,8 +19,8 @@ function CreateCourses() {
   const handleCreateCourse = async () => {
     setLoading(true);
     try {
-      const result = await axios.post(`${serverUrl}/api/course/create`,
-        { title, category }, { withCredentials: true });
+      const result = await axiosClient.post(`/api/course/create`,
+        { title, category });
       const newCourse = result.data?.course ?? result.data;
       // Immediately update the Redux store so Courses.jsx shows the new course
       const existing = Array.isArray(creatorCourseData) ? creatorCourseData : [];

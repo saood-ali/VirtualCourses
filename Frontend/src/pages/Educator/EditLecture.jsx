@@ -1,4 +1,4 @@
-import axios from "axios";
+import axiosClient from "../../config/axiosClient.js";
 import React, { useEffect, useState } from "react";
 import { BsArrowReturnLeft } from "react-icons/bs";
 import { FaCheckCircle } from "react-icons/fa";
@@ -6,7 +6,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { setLectureData } from "../../redux/lectureSlice.js";
 import { toast } from "react-toastify";
-import { serverUrl } from "../../App.jsx";
 import { ClipLoader, HashLoader } from "react-spinners";
 import Iridescence from "../../components/Iridescence.jsx";
 import ReactPlayer from 'react-player';
@@ -39,9 +38,7 @@ function EditLecture() {
       if (!preSelectedLecture) {
         try {
           setPageLoading(true);
-          const { data } = await axios.get(`${serverUrl}/api/course/getlecture/${lectureId}`, {
-            withCredentials: true
-          });
+          const { data } = await axiosClient.get(`/api/course/getlecture/${lectureId}`);
 
           if (data && data.success !== false) {
             setLectureTitle(data.lectureTitle);
@@ -67,8 +64,7 @@ function EditLecture() {
     
     // Step 1: Get signature from backend
     try {
-      const response = await axios.get(`${serverUrl}/api/upload/signature`, {
-        withCredentials: true,
+      const response = await axiosClient.get(`/api/upload/signature`, {
         headers: {
           "ngrok-skip-browser-warning": "69420"
         }
@@ -125,10 +121,9 @@ function EditLecture() {
         videoUrl: finalVideoUrl // Always send the URL (either old or new)
       };
 
-      const result = await axios.post(
-        `${serverUrl}/api/course/editlecture/${lectureId}`,
-        payload,
-        { withCredentials: true }
+      const result = await axiosClient.post(
+        `/api/course/editlecture/${lectureId}`,
+        payload
       );
 
       console.log(result.data);
@@ -156,7 +151,7 @@ function EditLecture() {
 
     setLoading1(true);
     try {
-      const result = await axios.delete(`${serverUrl}/api/course/removelecture/${lectureId}`, { withCredentials: true });
+      const result = await axiosClient.delete(`/api/course/removelecture/${lectureId}`);
       console.log(result.data);
 
       const filtered = lectureData.filter(l => l._id !== lectureId);

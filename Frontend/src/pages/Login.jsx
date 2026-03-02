@@ -5,8 +5,7 @@ import { FaEye } from "react-icons/fa";
 import { HiEyeSlash } from "react-icons/hi2";
 import { useNavigate } from "react-router-dom";
 import { ClipLoader } from "react-spinners";
-import { serverUrl } from "../App.jsx";
-import axios from "axios";
+import axiosClient from "../config/axiosClient.js";
 import { toast } from "react-toastify";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../redux/userSlice.js";
@@ -24,10 +23,9 @@ function Login() {
  const handleLogin = async () => {
   setLoading(true);
   try {
-    const result = await axios.post(
-      `${serverUrl}/api/auth/login`, 
-      { email, password }, 
-      { withCredentials: true }
+    const result = await axiosClient.post(
+      `/api/auth/login`, 
+      { email, password }
     );
     localStorage.setItem("token", result.data.token);
     dispatch(setUserData(result.data.user));
@@ -49,10 +47,9 @@ const googleLogin = async () => {
     let email = user.email;
     let role = ""; 
 
-    const result = await axios.post(
-      `${serverUrl}/api/auth/googleauth`,
-      { name, email, role },
-      { withCredentials: true }
+    const result = await axiosClient.post(
+      `/api/auth/googleauth`,
+      { name, email, role }
     );
     localStorage.setItem("token", result.data.token);
     dispatch(setUserData(result.data.user));

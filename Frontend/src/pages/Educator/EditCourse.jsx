@@ -4,8 +4,7 @@ import { BsArrowReturnLeft } from "react-icons/bs";
 import { useNavigate, useParams } from "react-router-dom";
 import img from "../../assets/empty_folder.png";
 import { FaEdit } from "react-icons/fa";
-import axios from "axios";
-import { serverUrl } from "../../App.jsx";
+import axiosClient from "../../config/axiosClient.js";
 import { toast } from "react-toastify";
 import { ClipLoader } from "react-spinners";
 import { useDispatch, useSelector } from "react-redux";
@@ -59,9 +58,7 @@ function EditCourse() {
     // Step 2: fetch fresh data from the server to overwrite with authoritative values
     const fetchCourseData = async () => {
       try {
-        const result = await axios.get(`${serverUrl}/api/course/getcourse/${courseId}`, {
-          withCredentials: true
-        });
+        const result = await axiosClient.get(`/api/course/getcourse/${courseId}`);
         if (result.data) populateForm(result.data);
       } catch (error) {
         console.log("Could not fetch course from server:", error);
@@ -88,10 +85,9 @@ function EditCourse() {
     }
 
     try {
-      const result = await axios.post(
-        `${serverUrl}/api/course/editcourse/${courseId}`,
-        formData,
-        { withCredentials: true }
+      const result = await axiosClient.post(
+        `/api/course/editcourse/${courseId}`,
+        formData
       );
 
       // result.data = { message, course } from the backend
@@ -118,7 +114,7 @@ function EditCourse() {
   const handleRemoveCourse = async () => {
     setLoading1(true);
     try {
-      const result = await axios.delete(`${serverUrl}/api/course/remove/${courseId}`,{withCredentials:true});
+      const result = await axiosClient.delete(`/api/course/remove/${courseId}`);
       console.log(result.data);
       const currentCourses = Array.isArray(creatorCourseData) ? creatorCourseData : [];
       const filterCourses = currentCourses.filter(c => c._id !== courseId);

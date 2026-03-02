@@ -2,10 +2,9 @@ import logo from "../assets/VC.png";
 import { IoPersonCircle } from "react-icons/io5";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { serverUrl } from "../App.jsx";
+import axiosClient from "../config/axiosClient.js";
 import { setUserData } from "../redux/userSlice.js";
 import { toast } from "react-toastify";
-import axios from "axios";
 import { useState, useRef, useEffect } from "react";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { GiSplitCross } from "react-icons/gi";
@@ -34,11 +33,7 @@ function Nav() {
 
   const handleLogOut = async () => {
     try {
-        await axios.post(
-            `${serverUrl}/api/auth/logout`,
-            {},
-            { withCredentials: true } 
-        );
+        await axiosClient.post(`/api/auth/logout`);
         toast.success("LogOut Successfully");
     } catch (error) {
         console.log(error);

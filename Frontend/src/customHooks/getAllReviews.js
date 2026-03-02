@@ -1,6 +1,5 @@
-import axios from 'axios';
+import axiosClient from "../config/axiosClient.js";
 import { useEffect } from 'react';
-import { serverUrl } from '../App.jsx';
 import { useDispatch } from 'react-redux';
 import { setReviewData } from '../redux/reviewSlice.js';
 const useGetAllReviews = () => {
@@ -9,7 +8,7 @@ const useGetAllReviews = () => {
     useEffect(()=>{
         const allReviews = async()=>{
             try {
-                const result = await axios.get(`${serverUrl}/api/review/getreview`,{withCredentials:true});
+                const result = await axiosClient.get(`/api/review/getreview?t=${Date.now()}`);
                 dispatch(setReviewData(result.data));
                 console.log(result.data);
             } catch (error) {

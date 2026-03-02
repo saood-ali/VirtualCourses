@@ -5,8 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { setSelectedCourse } from "../redux/courseSlice.js";
 import img from "../assets/empty_folder.png";
 import { FaStar, FaPlayCircle, FaLock, FaBroadcastTower } from "react-icons/fa"; 
-import axios from "axios";
-import { serverUrl } from "../App.jsx";
+import axiosClient from "../config/axiosClient.js";
 import Card from "../components/Card.jsx";
 import { toast } from "react-toastify";
 import { ClipLoader } from "react-spinners";
@@ -47,9 +46,7 @@ function ViewCourse() {
     const checkLiveStatus = async () => {
       try {
         // We use a simple GET request to check if a session exists
-        const res = await axios.get(`${serverUrl}/api/live/details/${courseId}`, {
-           withCredentials: true 
-        });
+        const res = await axiosClient.get(`/api/live/details/${courseId}`);
         if (res.data && res.data.youtubeVideoId) {
           setIsLive(true);
         } else {
@@ -90,10 +87,9 @@ function ViewCourse() {
     const handleCreator = async () => {
       if (selectedCourse?.creator) {
         try {
-          const result = await axios.post(
-            `${serverUrl}/api/course/creator`,
-            { userId: selectedCourse?.creator },
-            { withCredentials: true },
+          const result = await axiosClient.post(
+            `/api/course/creator`,
+            { userId: selectedCourse?.creator }
           );
           setCreatorData(result.data);
         } catch (error) {
@@ -236,10 +232,9 @@ function ViewCourse() {
 
   const handleEnroll = async (userId, courseId) => {
     try {
-      const orderData = await axios.post(
-        `${serverUrl}/api/order/razorpay-order`,
-        { userId, courseId },
-        { withCredentials: true },
+      const orderData = await axiosClient.post(
+        `/api/order/razorpay-order`,
+        { userId, courseId }
       );
 
       const options = {
@@ -251,10 +246,9 @@ function ViewCourse() {
         order_id: orderData.data.id,
         handler: async function (response) {
           try {
-            const verifyPayment = await axios.post(
-              `${serverUrl}/api/order/verifypayment`,
-              { ...response, courseId, userId },
-              { withCredentials: true },
+            const verifyPayment = await axiosClient.post(
+              `/api/order/verifypayment`,
+              { ...response, courseId, userId }
             );
             setPaymentSuccess(true);
             toast.success(verifyPayment.data.message);
@@ -276,10 +270,9 @@ function ViewCourse() {
   const handleReview = async () => {
     setLoading(true);
     try {
-      const result = await axios.post(
-        `${serverUrl}/api/review/createreview`,
-        { rating, comment, courseId },
-        { withCredentials: true },
+      const result = await axiosClient.post(
+        `/api/review/createreview`,
+        { rating, comment, courseId }
       );
       setLoading(false);
       toast.success("Review Added");

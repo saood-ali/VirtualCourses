@@ -1,7 +1,6 @@
 import { useState, useRef } from "react";
-import axios from "axios";
+import axiosClient from "../config/axiosClient.js";
 import { Sparkles } from "lucide-react"; 
-import { serverUrl } from "../App.jsx";
 
 const AIExplainer = ({ lectureId, videoRef }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -24,14 +23,13 @@ const AIExplainer = ({ lectureId, videoRef }) => {
     }, 3000);
 
     try {
-      const { data } = await axios.post(
-        `${serverUrl}/api/course/explain-lecture`,
+      const { data } = await axiosClient.post(
+        `/api/course/explain-lecture`,
         {
           lectureId,
           currentTimestamp: currentTime,
           userQuestion: question || "Explain what is being taught right now in simple terms."
-        },
-        { withCredentials: true } 
+        }
       );
 
       // Request finished! Clear the "Long Loading" message timer

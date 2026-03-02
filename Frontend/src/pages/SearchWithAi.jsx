@@ -3,8 +3,7 @@ import { BsArrowReturnLeft } from "react-icons/bs";
 import ai from "../assets/aisearchicon.png";
 import { RiMicAiFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { serverUrl } from "../App.jsx";
+import axiosClient from "../config/axiosClient.js";
 import start from "../assets/aiaudio.mp3";
 function SearchWithAi() {
   const startSound = new Audio(start);
@@ -54,10 +53,9 @@ useEffect(() => {
 };
   const handleRecommendation = async (query) => {
     try {
-      const result = await axios.post(
-        `${serverUrl}/api/course/search`,
-        { input: query },
-        { withCredentials: true }
+      const result = await axiosClient.post(
+        `/api/course/search`,
+        { input: query }
       );
       console.log(result.data);
       setRecommendations(result.data);

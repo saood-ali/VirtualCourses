@@ -2,12 +2,11 @@ import React, { useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { ZegoUIKitPrebuilt } from '@zegocloud/zego-uikit-prebuilt';
-import axios from 'axios';
+import axiosClient from "../config/axiosClient.js";
 import { toast } from 'react-toastify';
 
 const APP_ID = Number(import.meta.env.VITE_ZEGO_APP_ID); 
 const SERVER_SECRET = import.meta.env.VITE_ZEGO_SERVER_SECRET;
-const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 // Helper: Generate a random ID for guest users
 const randomID = (len = 5) => {
@@ -30,11 +29,9 @@ const LiveClass = () => {
         if (userData?.role !== 'educator') return;
 
         try {
-            await axios.post(`${SERVER_URL}/api/live/start`, {
-                courseId,
-                title: "Live Interactive Class",
-                isLive: isLive // true = Start, false = End
-            }, { withCredentials: true });
+            await axiosClient.put(`/api/course/golive/${courseId}`, {
+                isLive,
+            });
         } catch (error) {
             console.error("Failed to update live status", error);
         }

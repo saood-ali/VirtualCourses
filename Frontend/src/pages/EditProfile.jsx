@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BsArrowReturnLeft } from 'react-icons/bs';
 import { useDispatch, useSelector } from 'react-redux';
-import axios from 'axios';
-import { serverUrl } from '../App.jsx';
+import axiosClient from "../config/axiosClient.js";
 import { setUserData } from '../redux/userSlice.js';
 import { toast } from 'react-toastify';
 import { ClipLoader } from 'react-spinners';
@@ -40,15 +39,12 @@ const EditProfileForm = ({ initialData }) => {
         formData.append("photoUrl", photoUrl);
       }
 
-      const config = { withCredentials: true };
-
-      const result = await axios.post(
-        `${serverUrl}/api/user/profile`,
-        formData,
-        config
+      const response = await axiosClient.post(
+        `/api/user/profile`,
+        formData
       );
 
-      dispatch(setUserData(result.data));
+      dispatch(setUserData(response.data));
       setLoading(false);
       navigate("/profile");
       toast.success("Profile Updated Successfully");

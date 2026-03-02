@@ -1,9 +1,8 @@
-import axios from 'axios';
+import axiosClient from '../../config/axiosClient.js';
 import { useState, useEffect } from 'react';
 import { BsArrowReturnLeft } from "react-icons/bs";
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
-import { serverUrl } from '../../App.jsx';
 import { setLectureData } from '../../redux/lectureSlice.js';
 import { toast } from 'react-toastify';
 import { FaEdit } from "react-icons/fa";
@@ -23,7 +22,7 @@ function CreateLecture() {
   const handleCreateLecture = async () => {
     setLoading(true);
     try {
-      const result = await axios.post(`${serverUrl}/api/course/createlecture/${courseId}`, {lectureTitle}, {withCredentials:true});
+      const result = await axiosClient.post(`/api/course/createlecture/${courseId}`, {lectureTitle});
       
       const currentLectures = Array.isArray(lectureData) ? lectureData : [];
       dispatch(setLectureData([...currentLectures, result.data.lecture]));
@@ -44,9 +43,8 @@ function CreateLecture() {
       if (!courseId) return;
 
       try {
-        const result = await axios.get(
-          `${serverUrl}/api/course/courselecture/${courseId}`, 
-          {withCredentials:true}
+        const result = await axiosClient.get(
+          `/api/course/courselecture/${courseId}`
         );
         
         console.log("Fetched Data:", result.data); 

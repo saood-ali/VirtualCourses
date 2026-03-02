@@ -4,8 +4,7 @@ import google from "../assets/google_icon.png";
 import { FaEye } from "react-icons/fa";
 import { HiEyeSlash } from "react-icons/hi2";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { serverUrl } from "../App.jsx";
+import axiosClient from "../config/axiosClient.js";
 import { toast } from "react-toastify";
 import {ClipLoader} from "react-spinners";
 import { useDispatch } from "react-redux";
@@ -25,10 +24,13 @@ function SignUp() {
   const handleSignup = async()=>{
     setLoading(true)
     try {
-      const result = await axios.post(`${serverUrl}/api/auth/signup`,{
+      const result = await axiosClient.post(`/api/auth/signup`,{
         name, email, password, role
-      }, {withCredentials:true});
-      dispatch(setUserData(result.data));
+      });
+      if (result.data.token) {
+        localStorage.setItem("token", result.data.token);
+      }
+      dispatch(setUserData(result.data.user || result.data));
       setLoading(false);
       navigate("/");
       toast.success("Signup successful");
@@ -44,10 +46,12 @@ function SignUp() {
       let user = response.user;
       let name = user.displayName;
       let email = user.email;
-      const result = await axios.post(`${serverUrl}/api/auth/googleauth`, 
-        {name, email, role},
-        {withCredentials:true})
-        dispatch(setUserData(result.data));
+      const result = await axiosClient.post(`/api/auth/googleauth`, 
+        {name, email, role})
+        if (result.data.token) {
+          localStorage.setItem("token", result.data.token);
+        }
+        dispatch(setUserData(result.data.user || result.data));
         navigate("/");
         toast.success("Signup successful");
     } catch (error) {

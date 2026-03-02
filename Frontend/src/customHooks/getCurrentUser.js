@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-import { serverUrl } from "../App.jsx";
+import axiosClient from "../config/axiosClient.js";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../redux/userSlice.js";
 
@@ -11,10 +10,9 @@ const useGetCurrentUser = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const result = await axios.get(
-          `${serverUrl}/api/user/getcurrentuser?t=${new Date().getTime()}`,
+        const result = await axiosClient.get(
+          `/api/user/getcurrentuser?t=${new Date().getTime()}`,
           {
-            withCredentials: true,
             headers: {
               'Cache-Control': 'no-cache',
               'Pragma': 'no-cache',
