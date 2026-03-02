@@ -9,7 +9,7 @@ import { serverUrl } from "../../App.jsx";
 import { toast } from "react-toastify";
 import { ClipLoader } from "react-spinners";
 import { useDispatch, useSelector } from "react-redux";
-import { setCourseData } from "../../redux/courseSlice.js";
+import { setCreatorCourseData } from "../../redux/courseSlice.js";
 import { FlickeringGrid } from "../../components/FlickeringGrid.jsx"; 
 
 function EditCourse() {
@@ -29,7 +29,7 @@ function EditCourse() {
   const [loading, setLoading] = useState(false);
   const [loading1, setLoading1] = useState(false);
   const dispatch = useDispatch();
-  const {courseData} = useSelector(state=>state.course);
+  const { creatorCourseData } = useSelector(state => state.course);
 
   const handleThumbnail = (e)=>{
     const file = e.target.files[0];
@@ -37,34 +37,40 @@ function EditCourse() {
     setFrontendImage(URL.createObjectURL(file));
   }
 
-  useEffect(() => {
-  const fetchCourseData = async () => {
-    try {
-      const result = await axios.get(`${serverUrl}/api/course/getcourse/${courseId}`, {
-        withCredentials: true
-      });
-      
-      const courseData = result.data;
-      setSelectCourse(courseData);
-
-      if (courseData) {
-        setTitle(courseData.title || "");
-        setSubTitle(courseData.subTitle || "");
-        setDescription(courseData.description || "");
-        setCategory(courseData.category || "");
-        setLevel(courseData.level || "");
-        setPrice(courseData.price || "");
-        setFrontendImage(courseData.thumbnail || img);
-        setIsPublished(courseData.isPublished);
-      }
-    } catch (error) {
-      console.log(error);
-    }
+  const populateForm = (courseData) => {
+    setSelectCourse(courseData);
+    setTitle(courseData.title || "");
+    setSubTitle(courseData.subTitle || "");
+    setDescription(courseData.description || "");
+    setCategory(courseData.category || "");
+    setLevel(courseData.level || "");
+    setPrice(courseData.price || "");
+    setFrontendImage(courseData.thumbnail || img);
+    setIsPublished(courseData.isPublished ?? false);
   };
 
-  fetchCourseData();
-  
-}, [courseId]);
+  useEffect(() => {
+    // Step 1: instantly populate from Redux store so previous edits show right away
+    if (Array.isArray(creatorCourseData)) {
+      const cached = creatorCourseData.find(c => c._id === courseId);
+      if (cached) populateForm(cached);
+    }
+
+    // Step 2: fetch fresh data from the server to overwrite with authoritative values
+    const fetchCourseData = async () => {
+      try {
+        const result = await axios.get(`${serverUrl}/api/course/getcourse/${courseId}`, {
+          withCredentials: true
+        });
+        if (result.data) populateForm(result.data);
+      } catch (error) {
+        console.log("Could not fetch course from server:", error);
+      }
+    };
+
+    fetchCourseData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseId]);
 
  const handleEditCourse = async () => {
     setLoading(true);
@@ -88,21 +94,15 @@ function EditCourse() {
         { withCredentials: true }
       );
 
-      const updateData = result.data;
-      const currentCourses = courseData || []; 
+      // result.data = { message, course } from the backend
+      const updatedCourse = result.data?.course ?? result.data;
+      const currentCourses = Array.isArray(creatorCourseData) ? creatorCourseData : [];
 
-      if(updateData.isPublished){
-        const updateCourses = currentCourses.map(c => c._id === courseId ? updateData : c);
-        
-        if(!currentCourses.some(c => c._id === courseId)) {
-          updateCourses.push(updateData);
-        }
-        dispatch(setCourseData(updateCourses));
-      }
-      else {
-        const filterCourses = currentCourses.filter(c => c._id !== courseId);
-        dispatch(setCourseData(filterCourses)); 
-      }
+      // Replace the matching course entry in the creator list with fresh data
+      const updatedList = currentCourses.map(c =>
+        c._id === courseId ? { ...c, ...updatedCourse } : c
+      );
+      dispatch(setCreatorCourseData(updatedList));
 
       setLoading(false);
       navigate("/courses");
@@ -120,8 +120,9 @@ function EditCourse() {
     try {
       const result = await axios.delete(`${serverUrl}/api/course/remove/${courseId}`,{withCredentials:true});
       console.log(result.data);
-      const filterCourses = courseData.filter(c=>c._id!==courseId);
-      dispatch(setCourseData(filterCourses));
+      const currentCourses = Array.isArray(creatorCourseData) ? creatorCourseData : [];
+      const filterCourses = currentCourses.filter(c => c._id !== courseId);
+      dispatch(setCreatorCourseData(filterCourses));
       setLoading1(false);
       navigate("/courses")
       toast.success("Course Removed")

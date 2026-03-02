@@ -6,9 +6,13 @@ import { serverUrl } from "../../App.jsx";
 import { toast } from "react-toastify";
 import { ClipLoader } from "react-spinners";
 import { DotPattern } from "../../components/DotPattern.jsx";
+import { useDispatch, useSelector } from "react-redux";
+import { setCreatorCourseData } from "../../redux/courseSlice.js";
 
 function CreateCourses() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { creatorCourseData } = useSelector((state) => state.course);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,15 +21,18 @@ function CreateCourses() {
     setLoading(true);
     try {
       const result = await axios.post(`${serverUrl}/api/course/create`,
-        { title, category }, { withCredentials: true })
-      console.log(result.data);
-      navigate("/courses")
-      setLoading(false)
-      toast.success("Course Created")
+        { title, category }, { withCredentials: true });
+      const newCourse = result.data?.course ?? result.data;
+      // Immediately update the Redux store so Courses.jsx shows the new course
+      const existing = Array.isArray(creatorCourseData) ? creatorCourseData : [];
+      dispatch(setCreatorCourseData([...existing, newCourse]));
+      toast.success("Course Created");
+      navigate("/courses");
     } catch (error) {
-      setLoading(false);
       console.log(error);
-      toast.error(error.response.data.message)
+      toast.error(error.response?.data?.message ?? "Failed to create course");
+    } finally {
+      setLoading(false);
     }
   }
 
