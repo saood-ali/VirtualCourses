@@ -17,8 +17,8 @@ function ReviewPage() {
       md:p-[30px] p-[10px] mb-[40px] cursor-pointer">
        {
         latestReview?.map((review,index)=>(
-            <ReviewCard key={index} comment={review.comment} rating={review.rating} photoUrl={review.user.photoUrl} 
-                courseTitle={review.course.title} name={review.user.name} description={review.user.description}
+            <ReviewCard key={index} comment={review.comment} rating={review.rating} photoUrl={review.user?.photoUrl} 
+                courseTitle={review.course?.title} courseId={review.course?._id} name={review.user?.name} description={review.user?.description}
             />
         ))
        }

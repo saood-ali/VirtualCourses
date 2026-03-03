@@ -38,11 +38,10 @@ export const createReview = async(req,res) =>{
 
 export const getReviews = async (req, res) => {
     try {
-        const reviews = await getOrSetCache("reviews:all", async () => {
-            return await Review.find({})
-                .populate("user", "course")
-                .sort({ reviewedAt: -1 });
-        }, 3600);
+        const reviews = await Review.find({})
+            .populate("user")
+            .populate("course", "title")
+            .sort({ createdAt: -1 });
 
         return res.status(200).json(reviews);
 
