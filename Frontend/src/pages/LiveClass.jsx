@@ -29,7 +29,8 @@ const LiveClass = () => {
         if (userData?.role !== 'educator') return;
 
         try {
-            await axiosClient.put(`/api/course/golive/${courseId}`, {
+            await axiosClient.post(`/api/live/start`, {
+                courseId,
                 isLive,
             });
         } catch (error) {

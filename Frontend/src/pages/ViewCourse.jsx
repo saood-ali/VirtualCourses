@@ -47,7 +47,7 @@ function ViewCourse() {
       try {
         // We use a simple GET request to check if a session exists
         const res = await axiosClient.get(`/api/live/details/${courseId}`);
-        if (res.data && res.data.youtubeVideoId) {
+        if (res.data && res.data.success) {
           setIsLive(true);
         } else {
           setIsLive(false);
