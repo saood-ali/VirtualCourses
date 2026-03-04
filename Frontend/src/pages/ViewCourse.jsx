@@ -70,7 +70,8 @@ function ViewCourse() {
       (typeof c === "string" ? c : c._id).toString() === courseId?.toString(),
   );
 
-  const isEnrolled = isAlreadyEnrolled || paymentSuccess;
+  const isCourseCreator = userData?.role === 'educator' && selectedCourse?.creator === userData?._id;
+  const isEnrolled = isAlreadyEnrolled || paymentSuccess || isCourseCreator;
 
   // Robust Data Syncing
   useEffect(() => {
@@ -348,7 +349,7 @@ function ViewCourse() {
                 </div>
                 
                 {/* Live Class Button  */}
-                {(isLive || (userData?.role === 'educator' && selectedCourse?.creator === userData?._id)) && (
+                {(isLive || isCourseCreator) && (
                     <div className="w-full my-3">
                         <button 
                             onClick={() => navigate(`/course/live/${courseId}`)}
