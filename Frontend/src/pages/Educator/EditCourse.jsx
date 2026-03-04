@@ -70,6 +70,13 @@ function EditCourse() {
   }, [courseId]);
 
  const handleEditCourse = async () => {
+    if (isPublished) {
+      if (!title || !category || !level || !price) {
+        toast.error("Title, Category, Level, and Price are required to publish the course.");
+        setIsPublished(false);
+        return;
+      }
+    }
     setLoading(true);
     const formData = new FormData();
     formData.append("title", title);

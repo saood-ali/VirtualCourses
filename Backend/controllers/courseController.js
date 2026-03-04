@@ -70,6 +70,18 @@ export const editCourse = async (req, res) => {
             return res.status(404).json({ message: "Course not found" });
         }
 
+        const isBeingPublished = isPublished === true || isPublished === 'true';
+        if (isBeingPublished) {
+            const finalTitle = title || course.title;
+            const finalCategory = category || course.category;
+            const finalLevel = level || course.level;
+            const finalPrice = price !== undefined && price !== "" ? price : course.price;
+            
+            if (!finalTitle || !finalCategory || !finalLevel || finalPrice === undefined || finalPrice === null || finalPrice === "") {
+                return res.status(400).json({ message: "Title, category, level, and price are required to publish the course." });
+            }
+        }
+
         const userId = (req.id || req.userId).toString();
         const creatorId = course.creator.toString();
 
