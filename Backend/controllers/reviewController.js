@@ -43,7 +43,8 @@ export const getReviews = async (req, res) => {
             .populate("course", "title")
             .sort({ createdAt: -1 });
 
-        return res.status(200).json(reviews);
+        const validReviews = reviews.filter(review => review.course !== null);
+        return res.status(200).json(validReviews);
 
     } catch (error) {
         return res.status(500).json({ message: `Failed to get review ${error}` });

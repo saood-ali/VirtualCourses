@@ -3,6 +3,7 @@ import { uploadOnCloudinary } from "../config/cloudinary.js";
 import Lecture from "../models/lectureModel.js";
 import Course from "../models/courseModel.js";
 import User from "../models/userModel.js";
+import Review from "../models/reviewModel.js";
 import { getOrSetCache, clearCache } from "../config/redis.js";
 
 const getPublicIdFromUrl = (url) => {
@@ -146,10 +147,13 @@ export const removeCourse = async (req, res) => {
         }
 
         await Course.findByIdAndDelete(courseId);
+        await Review.deleteMany({ course: courseId });
+
         await clearCache(
             `course:${courseId}`, 
             `courses:published`, 
-            `creator:courses:${req.id || req.userId}`
+            `creator:courses:${req.id || req.userId}`,
+            `reviews:all`
         );
         return res.status(200).json({ message: "Course deleted successfully" });
 
