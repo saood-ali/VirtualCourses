@@ -121,9 +121,9 @@ function SearchWithAi() {
           {/* Icon + Badge */}
           {!searched && (
             <div className="flex flex-col items-center mb-7">
-              <div className="w-16 h-16 rounded-[6px] bg-[#FFD400]/10 border border-[#FFD400]/30 flex items-center justify-center mb-5">
+              {/* <div className="w-16 h-16 rounded-[6px] bg-[#FFD400]/10 border border-[#FFD400]/30 flex items-center justify-center mb-5">
                 <Sparkles className="w-7 h-7 text-[#111111]" />
-              </div>
+              </div> */}
               <h1 className="text-[40px] font-bold text-[#111111] leading-none mb-3">
                 Search with AI
               </h1>
