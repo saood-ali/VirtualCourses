@@ -1,25 +1,32 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { BsArrowReturnLeft } from 'react-icons/bs';
-import { useDispatch, useSelector } from 'react-redux';
+import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify";
+import { ClipLoader } from "react-spinners";
+import { 
+  ArrowLeft, 
+  Camera, 
+  User, 
+  Mail, 
+  FileText, 
+  Save, 
+  X 
+} from "lucide-react";
+
 import axiosClient from "../config/axiosClient.js";
-import { setUserData } from '../redux/userSlice.js';
-import { toast } from 'react-toastify';
-import { ClipLoader } from 'react-spinners';
-import Iridescence from '../components/Iridescence.jsx';
+import { setUserData } from "../redux/userSlice.js";
 
 const EditProfileForm = ({ initialData }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  
-  // Form State
+  const fileInputRef = useRef(null);
+
   const [name, setName] = useState(initialData.name || "");
   const [description, setDescription] = useState(initialData.description || "");
   const [photoUrl, setPhotoUrl] = useState(null);
   const [preview, setPreview] = useState(initialData.photoUrl || "");
   const [loading, setLoading] = useState(false);
 
-  // Handle file selection
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -28,22 +35,19 @@ const EditProfileForm = ({ initialData }) => {
     }
   };
 
+  const triggerFileInput = () => fileInputRef.current?.click();
+
   const handleEditProfile = async (e) => {
     e.preventDefault();
+    if (!name.trim()) return toast.error("Name is required");
     setLoading(true);
     try {
       const formData = new FormData();
       formData.append("name", name);
       formData.append("description", description);
-      if (photoUrl) {
-        formData.append("photoUrl", photoUrl);
-      }
+      if (photoUrl) formData.append("photoUrl", photoUrl);
 
-      const response = await axiosClient.post(
-        `/api/user/profile`,
-        formData
-      );
-
+      const response = await axiosClient.post(`/api/user/profile`, formData);
       dispatch(setUserData(response.data));
       setLoading(false);
       navigate("/profile");
@@ -55,111 +59,149 @@ const EditProfileForm = ({ initialData }) => {
     }
   };
 
+  const firstInitial = initialData.name ? initialData.name.charAt(0).toUpperCase() : "U";
+
   return (
-    // 1. MAIN CONTAINER: Exact match to Profile (White BG)
-    <div className="relative min-h-screen px-4 py-10 flex items-center justify-center bg-white overflow-hidden">
+    <div className="min-h-screen bg-white text-[#111111] flex flex-col items-center justify-center font-sans antialiased p-4 relative">
 
-      {/* 2. BACKGROUND ANIMATION: Exact match to Profile (Light Colors) */}
-      <div className="absolute inset-0 z-0">
-        <Iridescence 
-          color={[0.9, 0.94, 1]} 
-          mouseReact={false} 
-          amplitude={0.1} 
-          speed={1.0} 
-        />
-      </div>
+      {/* Top-Left Back Button — identical to Profile.jsx */}
+      <button
+        onClick={() => navigate("/profile")}
+        className="absolute top-6 left-6 md:top-8 md:left-8 flex items-center gap-2 text-[#111111] hover:text-[#5F6368] transition-colors font-medium cursor-pointer"
+        aria-label="Cancel and go back"
+      >
+        <ArrowLeft className="w-4.5 h-4.5" />
+        <span>Back</span>
+      </button>
 
-      {/* 3. CARD CONTAINER: Exact match (Glassmorphism, Shadow, Border) */}
-      <div className="relative z-10 bg-white/80 backdrop-blur-md border border-gray-200 shadow-2xl rounded-2xl p-8 max-w-xl w-full text-gray-800">
-        
-        {/* Back Arrow */}
-        <BsArrowReturnLeft
-          className="absolute top-[8%] left-[5%] w-[22px] h-[22px] cursor-pointer hover:scale-110 transition text-gray-400 hover:text-gray-900"
-          onClick={() => navigate("/profile")}
-          title="Go Back"
-        />
+      {/* Main Card — identical shape to Profile.jsx */}
+      <div className="max-w-[660px] w-full bg-white border border-[#E5E7EB] rounded-lg shadow-[0_1px_3px_rgba(0,0,0,0.05)] p-6 sm:p-8 flex flex-col my-12">
 
         <form onSubmit={handleEditProfile}>
-          
-          {/* Avatar Display Section */}
+
+          {/* ── Header Section (exact replica of Profile header) ── */}
           <div className="flex flex-col items-center text-center">
-            <div className="w-24 h-24">
+            <div className="relative">
               {preview ? (
                 <img
                   src={preview}
-                  className="w-full h-full rounded-full object-cover border-4 border-white shadow-lg"
                   alt="Profile Preview"
+                  className="w-[120px] h-[120px] rounded-full object-cover border border-[#E5E7EB]"
                 />
               ) : (
-                <div className="w-full h-full rounded-full text-white flex items-center justify-center text-[30px] border-2 bg-blue-600 border-white shadow-lg">
-                  {initialData.name?.slice(0, 1).toUpperCase()}
+                <div className="w-[120px] h-[120px] rounded-full bg-[#FFD400] text-[#111111] flex items-center justify-center text-5xl font-bold border border-[#E5E7EB]">
+                  {firstInitial}
                 </div>
               )}
+              <button
+                type="button"
+                onClick={triggerFileInput}
+                className="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-white border border-[#E5E7EB] flex items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:bg-[#F8F9FA] transition-colors cursor-pointer"
+                aria-label="Choose profile picture"
+              >
+                <Camera className="w-4.5 h-4.5 text-[#5F6368]" />
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+              />
             </div>
 
-            <h2 className="text-2xl font-bold mt-4 text-gray-900">Edit Profile</h2>
+            {/* Same heading + subtitle as Profile */}
+            <h2 className="text-[40px] font-bold text-[#111111] leading-none mt-5">
+              Edit Profile
+            </h2>
+            <p className="text-base text-[#5F6368] mt-2">
+              Update your account information and bio.
+            </p>
           </div>
 
-          {/* Form Fields Section */}
-          <div className="mt-6 space-y-4">
+          {/* Divider — identical to Profile */}
+          <div className="border-t border-[#E5E7EB] my-6"></div>
 
-            {/* RESTORED: Explicit Image Upload Field */}
-            <div className="flex flex-col gap-1">
-               <label htmlFor="image-upload" className="text-sm font-semibold text-gray-600 mb-1">Change Avatar</label>
-               <input 
-                 id="image-upload" 
-                 type="file" 
-                 accept="image/*" 
-                 onChange={handleFileChange}
-                 // Styled to match the other inputs in this layout
-                 className="w-full text-sm text-gray-600 border border-gray-300 rounded-lg cursor-pointer bg-white/50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-l-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500"
-               />
-            </div>
-            
-            {/* Username */}
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-semibold text-gray-600">Username</label>
-              <input 
-                type="text" 
-                value={name} 
+          {/* ── Rows — same structure as Profile info rows ── */}
+          <div className="flex flex-col">
+
+            {/* Row 1 : Username — editable */}
+            <div className="flex items-center min-h-[64px] border-b border-[#E5E7EB] py-3 gap-3">
+              {/* Icon box — identical to Profile */}
+              <div className="w-9 h-9 rounded-[6px] bg-[#F8F9FA] border border-[#E5E7EB] flex items-center justify-center text-[#5F6368] shrink-0">
+                <User className="w-4.5 h-4.5" />
+              </div>
+              {/* Label — identical to Profile */}
+              <span className="text-sm font-semibold text-[#111111] shrink-0">Full Name</span>
+              {/* Editable value slot */}
+              <input
+                type="text"
+                value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white/50"
+                placeholder="Enter your name"
+                className="ml-auto text-sm font-medium text-[#5F6368] text-right bg-transparent focus:outline-none focus:text-[#111111] placeholder-[#9CA3AF] w-full max-w-[55%] transition-colors"
               />
             </div>
 
-            {/* Email (Read Only) */}
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-semibold text-gray-600">Email</label>
-              <input 
-                type="text" 
-                value={initialData.email} 
+            {/* Row 2 : Email — read-only */}
+            <div className="flex items-center min-h-[64px] border-b border-[#E5E7EB] py-3 gap-3">
+              <div className="w-9 h-9 rounded-[6px] bg-[#F8F9FA] border border-[#E5E7EB] flex items-center justify-center text-[#5F6368] shrink-0">
+                <Mail className="w-4.5 h-4.5" />
+              </div>
+              <span className="text-sm font-semibold text-[#111111] shrink-0">Email Address</span>
+              <input
+                type="email"
                 readOnly
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-gray-500 bg-gray-100 cursor-not-allowed"
+                value={initialData.email}
+                className="ml-auto text-sm font-medium text-[#9CA3AF] text-right bg-transparent focus:outline-none cursor-not-allowed w-full max-w-[55%] select-all"
               />
             </div>
 
-            {/* Bio */}
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-semibold text-gray-600">Bio</label>
-              <textarea 
-                rows={3}
+            {/* Row 3 : Bio — full-width card textarea */}
+            <div className="flex flex-col pt-3 pb-1 gap-2">
+              {/* Label row — same icon + label pattern */}
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-[6px] bg-[#F8F9FA] border border-[#E5E7EB] flex items-center justify-center text-[#5F6368] shrink-0">
+                  <FileText className="w-4.5 h-4.5" />
+                </div>
+                <span className="text-sm font-semibold text-[#111111]">Bio</span>
+              </div>
+              {/* Textarea card */}
+              <textarea
+                rows={4}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Tell us about yourself..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white/50 resize-none"
+                className="w-full mt-1 px-4 py-3 text-sm font-medium text-[#111111] placeholder-[#9CA3AF] bg-white border border-[#E5E7EB] rounded-[6px] resize-none leading-relaxed focus:outline-none focus:border-[#FFD400] focus:ring-1 focus:ring-[#FFD400] transition-shadow"
               />
             </div>
 
           </div>
 
-          {/* Action Button - Centered like Profile buttons */}
-          <div className="mt-8 flex justify-center">
+          {/* ── Action Buttons — identical to Profile ── */}
+          <div className="flex flex-col sm:flex-row gap-4 w-full mt-6">
             <button
               type="submit"
               disabled={loading}
-              className="px-8 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-500 cursor-pointer transition shadow-lg shadow-blue-500/20 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+              className="flex-1 h-[50px] bg-[#FFD400] hover:bg-[#e6be00] active:scale-[0.99] text-[#111111] text-sm font-semibold rounded-[6px] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs disabled:opacity-75 disabled:cursor-not-allowed"
             >
-              {loading ? <ClipLoader size={20} color="white" /> : "Save Changes"}
+              {loading ? (
+                <ClipLoader size={20} color="#111111" />
+              ) : (
+                <>
+                  <Save className="w-4 h-4 text-[#111111]" />
+                  <span>Save Changes</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate("/profile")}
+              className="flex-1 h-[50px] bg-white hover:bg-[#F8F9FA] active:scale-[0.99] border border-[#E5E7EB] text-[#111111] text-sm font-semibold rounded-[6px] transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <X className="w-4 h-4 text-[#5F6368]" />
+              <span>Cancel</span>
             </button>
           </div>
 
@@ -170,17 +212,17 @@ const EditProfileForm = ({ initialData }) => {
 };
 
 function EditProfile() {
-  const { userData } = useSelector(state => state.user);
+  const { userData } = useSelector((state) => state.user);
 
   if (!userData) {
     return (
-      <div className='min-h-screen flex items-center justify-center bg-white'>
-         <ClipLoader size={50} color="black"/>
+      <div className="min-h-screen bg-white flex items-center justify-center font-sans antialiased">
+        <ClipLoader size={40} color="#111111" />
       </div>
     );
   }
 
-  return <EditProfileForm initialData={userData} key={userData._id || 'edit-form'} />;
+  return <EditProfileForm initialData={userData} key={userData._id || "edit-form"} />;
 }
 
 export default EditProfile;
