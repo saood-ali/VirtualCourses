@@ -1,119 +1,196 @@
-import axiosClient from '../../config/axiosClient.js';
 import { useState, useEffect } from 'react';
-import { BsArrowReturnLeft } from "react-icons/bs";
-import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
-import { setLectureData } from '../../redux/lectureSlice.js';
+import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import { FaEdit } from "react-icons/fa";
-import { DotPattern } from '../../components/DotPattern.jsx';
-import ElectricBorder from '../../components/ElectricBorder.jsx';
 import { ClipLoader } from 'react-spinners'; 
+import { 
+  ArrowLeft, ChevronDown, PlayCircle, PlusCircle, 
+  Edit3, Video, FileVideo, LayoutList
+} from "lucide-react";
 
-function CreateLecture() {
-  const {courseId} = useParams();
+import axiosClient from '../../config/axiosClient.js';
+import { setLectureData } from '../../redux/lectureSlice.js';
+
+export default function CreateLecture() {
+  const { courseId } = useParams();
   const navigate = useNavigate();
-  const [lectureTitle, setLectureTitle] = useState("");
-  const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
   
-  const {lectureData} = useSelector(state => state.lecture);
+  const { userData } = useSelector(state => state.user);
+  const { lectureData } = useSelector(state => state.lecture);
 
-  const handleCreateLecture = async () => {
-    setLoading(true);
-    try {
-      const result = await axiosClient.post(`/api/course/createlecture/${courseId}`, {lectureTitle});
-      
-      const currentLectures = Array.isArray(lectureData) ? lectureData : [];
-      dispatch(setLectureData([...currentLectures, result.data.lecture]));
-      
-      setLoading(false);
-      toast.success("Lecture Created");
-      setLectureTitle("");
-    } catch (error) {
-      console.log(error);
-      setLoading(false);
-      const errorMessage = error.response?.data?.message || "Something went wrong";
-      toast.error(errorMessage);
-    }
-  }
+  const [lectureTitle, setLectureTitle] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
 
   useEffect(() => {
     const getCourseLecture = async () => {
       if (!courseId) return;
-
+      setIsFetching(true);
       try {
-        const result = await axiosClient.get(
-          `/api/course/courselecture/${courseId}`
-        );
-        
-        console.log("Fetched Data:", result.data); 
+        const result = await axiosClient.get(`/api/course/courselecture/${courseId}`);
         const fetchedLectures = result.data.lectures || result.data.lecture || [];
-
         dispatch(setLectureData(fetchedLectures));
-
       } catch (error) {
         console.error("Failed to fetch lectures:", error);
+      } finally {
+        setIsFetching(false);
       }
-    }
-
+    };
     getCourseLecture();
-    
   }, [courseId, dispatch]);
 
-  return (
-    // PARENT CONTAINER
-    <div className='min-h-screen bg-gray-100 flex items-center justify-center p-4 relative overflow-hidden'>
+  const handleCreateLecture = async () => {
+    if (!lectureTitle.trim()) {
+      toast.error("Please enter a lecture title.");
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const result = await axiosClient.post(`/api/course/createlecture/${courseId}`, { lectureTitle });
       
-      {/* 1. DOT PATTERN */}
-      <DotPattern className="absolute inset-0 opacity-50 text-gray-300" />
+      const currentLectures = Array.isArray(lectureData) ? lectureData : [];
+      dispatch(setLectureData([...currentLectures, result.data.lecture]));
+      
+      toast.success("Lecture Created Successfully");
+      setLectureTitle("");
+    } catch (error) {
+      console.error(error);
+      const errorMessage = error.response?.data?.message || "Failed to create lecture";
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      {/* 2. ELECTRIC BORDER */}
-      <ElectricBorder className="w-full max-w-2xl" color="#7df99f" speed={2.9} chaos={0.05}>
-        <div className='bg-white shadow-xl rounded-xl w-full p-6'>
-          {/* Header */}
-          <div className='mb-6'>
-            <h1 className='text-2xl font-semibold text-gray-800 mb-1'>Let's add a lecture</h1>
-            <p className='text-gray-500 text-sm'>
-            Enter the title and add your video lectures to enhance your course content.
-            </p>
+  return (
+    <div className="min-h-screen bg-[#F8F9FA] text-[#111111] font-sans antialiased selection:bg-[#FFD400]/30 pb-20">
+      
+      {/* ── Navbar ── */}
+      <header className="sticky top-0 z-50 bg-white border-b border-[#E5E7EB] h-[72px] flex items-center px-6 lg:px-10 justify-between shadow-sm">
+        <div className="flex items-center gap-6">
+          <button onClick={() => navigate(`/editcourse/${courseId}`)} className="flex items-center gap-2 text-[#5F6368] hover:text-[#111111] font-semibold text-[14px] transition-colors cursor-pointer">
+            <ArrowLeft className="w-4 h-4" /> Course Settings
+          </button>
+          <div className="h-5 w-px bg-[#E5E7EB] hidden md:block" />
+          <div onClick={() => navigate("/")} className="flex items-center gap-2 font-bold tracking-tight text-lg cursor-pointer">
+            <div className="w-5 h-5 bg-[#FFD400] rounded-[4px] shrink-0" /> VirtualCourses
+          </div>
+        </div>
+
+        <div className="flex items-center gap-6 text-sm font-semibold text-[#111111]">
+          <div onClick={() => navigate("/profile")} className="flex items-center gap-2 cursor-pointer hover:text-[#5F6368] transition-colors">
+            <div className="w-8 h-8 rounded-full bg-[#FFD400] flex items-center justify-center text-[13px] font-bold border border-[#E5E7EB] overflow-hidden shrink-0">
+              {userData?.photoUrl ? (
+                 <img src={userData.photoUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                 userData?.name?.charAt(0)?.toUpperCase() || "E"
+              )}
+            </div>
+            <span className="hidden sm:block truncate max-w-[120px]">{userData?.name || "Educator"}</span>
+            <ChevronDown className="w-4 h-4 hidden sm:block text-[#9CA3AF]" />
+          </div>
+        </div>
+      </header>
+
+      {/* ── Main Layout ── */}
+      <main className="max-w-[800px] mx-auto px-6 lg:px-10 py-12">
+        
+        {/* Page Header */}
+        <div className="flex flex-col mb-8">
+          <h1 className="text-[32px] font-extrabold text-[#111111] leading-tight tracking-tight">Curriculum Editor</h1>
+          <p className="text-[15px] font-medium text-[#5F6368] mt-1">Structure your course by adding video lectures and resources.</p>
+        </div>
+
+        <div className="space-y-8">
+          
+          {/* ── Add Lecture Card ── */}
+          <div className="bg-white border border-[#E5E7EB] rounded-[8px] p-8 shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-full bg-[#FFD400]/10 flex items-center justify-center shrink-0">
+                <PlusCircle className="w-5 h-5 text-[#FFD400]" />
+              </div>
+              <div>
+                <h2 className="text-[18px] font-bold text-[#111111]">Add New Lecture</h2>
+                <p className="text-[13px] font-medium text-[#5F6368]">Create a new lecture section before uploading the video.</p>
+              </div>
+            </div>
+
+            <form onSubmit={(e) => { e.preventDefault(); handleCreateLecture(); }} className="flex flex-col sm:flex-row items-stretch gap-4">
+              <div className="relative flex-1 flex items-center h-[46px] bg-white border border-[#E5E7EB] rounded-[6px] px-4 focus-within:border-[#FFD400] focus-within:ring-1 focus-within:ring-[#FFD400] transition-shadow">
+                <PlayCircle className="w-4.5 h-4.5 text-[#9CA3AF] mr-2.5 shrink-0" />
+                <input
+                  type="text"
+                  placeholder="e.g. Introduction to MERN Stack"
+                  value={lectureTitle}
+                  onChange={(e) => setLectureTitle(e.target.value)}
+                  className="w-full h-full bg-transparent text-[14px] text-[#111111] placeholder-[#9CA3AF] focus:outline-none"
+                />
+              </div>
+              
+              <button 
+                type="submit"
+                disabled={loading}
+                className="h-[46px] px-6 bg-[#111111] hover:bg-[#222222] text-white text-[14px] font-bold rounded-[6px] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm disabled:opacity-75 shrink-0"
+              >
+                {loading ? <ClipLoader size={18} color="#ffffff" /> : "Create Lecture"}
+              </button>
+            </form>
           </div>
 
-          {/* Input Area */}
-          <div>
-            <input type='text' className='w-full border border-gray-300 
-            rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-black mb-4' 
-            placeholder='Introduction to MERN STACK' onChange={(e)=>setLectureTitle(e.target.value)} value={lectureTitle}/>
-            
-            {/* Button Area */}
-            <div className='flex gap-4 mb-6'>
-              <button className='flex items-center gap-2 px-4 py-2 rounded-md bg-gray-200 
-              hover:bg-gray-300 text-sm font-medium cursor-pointer' onClick={()=>navigate(`/editcourse/${courseId}`)}> <BsArrowReturnLeft/>Back to Courses</button>
-              <button className='px-5 py-2 rounded-md bg-black text-white hover:bg-gray-600
-              transition-all text-sm font-medium shadow cursor-pointer' disabled={loading} onClick={handleCreateLecture}>
-              {loading? <ClipLoader color="white" size={30}/>: "+Create Lecture"}</button>
+          {/* ── Lectures List ── */}
+          <div className="bg-white border border-[#E5E7EB] rounded-[8px] overflow-hidden shadow-sm">
+            <div className="px-6 py-5 border-b border-[#E5E7EB] bg-[#F8F9FA] flex items-center gap-3">
+              <LayoutList className="w-5 h-5 text-[#5F6368]" />
+              <h2 className="text-[16px] font-bold text-[#111111]">Course Syllabus</h2>
+              <span className="ml-auto inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-[12px] font-bold bg-[#E5E7EB] text-[#5F6368]">
+                {Array.isArray(lectureData) ? lectureData.length : 0} Lectures
+              </span>
+            </div>
+
+            <div className="divide-y divide-[#E5E7EB]">
+              {isFetching ? (
+                <div className="py-12 text-center text-[#9CA3AF] text-[14px] font-medium">Loading syllabus...</div>
+              ) : Array.isArray(lectureData) && lectureData.length > 0 ? (
+                lectureData.map((lecture, index) => (
+                  <div key={lecture._id || index} className="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[#F8F9FA] transition-colors group">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-[6px] bg-[#F8F9FA] border border-[#E5E7EB] flex items-center justify-center shrink-0">
+                        <FileVideo className="w-5 h-5 text-[#9CA3AF]" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[12px] font-bold text-[#5F6368] uppercase tracking-wider mb-0.5">
+                          Lecture {index + 1}
+                        </span>
+                        <span className="text-[14px] font-bold text-[#111111] leading-tight">
+                          {lecture.lectureTitle}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <button 
+                      onClick={() => navigate(`/editlecture/${courseId}/${lecture._id}`)}
+                      className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-[6px] border border-[#E5E7EB] bg-white text-[#5F6368] hover:text-[#111111] hover:border-[#111111] transition-all cursor-pointer shadow-sm sm:opacity-0 sm:group-hover:opacity-100"
+                    >
+                      <Edit3 className="w-4 h-4" /> <span className="text-[13px] font-bold">Edit Details</span>
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="py-16 flex flex-col items-center justify-center text-center space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-[#F8F9FA] flex items-center justify-center border border-[#E5E7EB]">
+                    <Video className="w-5 h-5 text-[#9CA3AF]" />
+                  </div>
+                  <p className="text-[14px] font-bold text-[#111111]">No lectures created yet.</p>
+                  <p className="text-[13px] text-[#5F6368]">Your course syllabus is currently empty.</p>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Lecture List */}
-          <div className='space-y-2'>
-            {/* Safe mapping: Check if lectureData is actually an array before mapping */}
-            {Array.isArray(lectureData) && lectureData.length > 0 ? (
-                lectureData.map((lecture, index) => (
-                <div key={lecture._id || index} className='bg-gray-100 rounded-md flex justify-between items-center p-3 text-sm font-medium text-gray-700'>
-                    <span>Lecture - {index + 1}: {lecture.lectureTitle}</span>
-                    <FaEdit className='text-gray-500 hover:text-gray-700 
-                    cursor-pointer' onClick={() => navigate(`/editlecture/${courseId}/${lecture._id}`)}/>
-                </div>
-                ))
-            ) : (
-                <p className="text-gray-400 text-center text-sm py-4">No lectures added yet.</p>
-            )}
-          </div>
         </div>
-      </ElectricBorder>
+      </main>
     </div>
-  )
+  );
 }
-
-export default CreateLecture;
