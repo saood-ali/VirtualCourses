@@ -1,4 +1,4 @@
-import Nav from "../components/Nav_TEMP.jsx";
+
 import home_page from "../assets/home_page.png";
 import { SiViaplay } from "react-icons/si";
 import ai from "../assets/aisearchicon.png";
@@ -7,7 +7,7 @@ import Logos from "../components/Logos.jsx";
 import ExploreCourses from "../components/ExploreCourses.jsx";
 import CardPage from "../components/CardPage.jsx";
 import { useNavigate } from "react-router-dom";
-import Footer from "../components/Footer.jsx";
+
 import About from "../components/About.jsx";
 import ReviewPage from "../components/ReviewPage.jsx";
 import ElectricBorder from "../components/ElectricBorder.jsx"; 
@@ -18,7 +18,7 @@ function Home() {
   const navigate = useNavigate();
   return (
     <div className="w-full overflow-hidden relative">
-      <Nav />
+
 
       {/* BACKGROUND PATTERN */}
       <DotPattern 
@@ -94,7 +94,7 @@ function Home() {
         <CardPage/>
         <About/>
         <ReviewPage/>
-        <Footer/>
+
       </div>
     </div>
   );

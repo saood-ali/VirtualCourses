@@ -199,44 +199,6 @@ export default function ViewCourse() {
   return (
     <div className="min-h-screen bg-white text-[#111111] font-sans antialiased pb-20 selection:bg-[#FFD400]/30">
 
-      {/* ── Navbar ── */}
-      <header className="sticky top-0 z-50 bg-white border-b border-[#E5E7EB] h-[72px] flex items-center px-6 lg:px-10 justify-between">
-        <div className="flex items-center gap-6">
-          <button onClick={() => navigate("/allcourses")} className="flex items-center gap-2 text-[#5F6368] hover:text-[#111111] font-semibold text-sm transition-colors cursor-pointer">
-            <ArrowLeft className="w-4 h-4" /> All Courses
-          </button>
-          <div className="h-5 w-px bg-[#E5E7EB] hidden md:block" />
-          <div onClick={() => navigate("/")} className="flex items-center gap-2 font-bold tracking-tight text-lg cursor-pointer">
-            <div className="w-5 h-5 bg-[#FFD400] rounded-[4px] shrink-0" /> VirtualCourses
-          </div>
-        </div>
-
-        <div className="hidden md:flex flex-1 max-w-[500px] mx-8">
-          <div className="relative w-full cursor-text" onClick={() => navigate("/search")}>
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
-            <input 
-              type="text" 
-              placeholder="Search for courses, topics..." 
-              className="w-full h-10 pl-10 pr-4 bg-[#F8F9FA] border border-[#E5E7EB] rounded-[6px] text-sm focus:outline-none focus:ring-2 focus:ring-[#FFD400]/50 transition-all placeholder-[#9CA3AF] cursor-pointer"
-              readOnly
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-6 text-sm font-semibold text-[#111111]">
-          <span onClick={() => navigate("/mycourses")} className="hidden lg:block cursor-pointer hover:text-[#5F6368] transition-colors">My Learning</span>
-          <div onClick={() => navigate("/profile")} className="flex items-center gap-2 cursor-pointer hover:text-[#5F6368] transition-colors">
-            <div className="w-8 h-8 rounded-full bg-[#FFD400] flex items-center justify-center text-sm font-bold border border-[#E5E7EB] overflow-hidden">
-              {userData?.photoUrl ? (
-                 <img src={userData.photoUrl} alt="" className="w-full h-full object-cover" />
-              ) : (
-                 userData?.name?.charAt(0)?.toUpperCase() || "U"
-              )}
-            </div>
-            <span className="hidden sm:block">{userData?.name || "User"}</span>
-          </div>
-        </div>
-      </header>
 
       {/* ── Breadcrumb ── */}
       <div className="max-w-[1400px] mx-auto px-6 lg:px-10 py-5">

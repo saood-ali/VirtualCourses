@@ -57,33 +57,6 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-[#111111] font-sans antialiased selection:bg-[#FFD400]/30">
 
-      {/* ── Navbar ── */}
-      <header className="sticky top-0 z-50 bg-white border-b border-[#E5E7EB] h-[72px] flex items-center px-6 lg:px-10 justify-between shadow-sm">
-        <div className="flex items-center gap-6">
-          <button onClick={() => navigate("/")} className="flex items-center gap-2 text-[#5F6368] hover:text-[#111111] font-semibold text-[14px] transition-colors cursor-pointer">
-            <ArrowLeft className="w-4 h-4" /> Home
-          </button>
-          <div className="h-5 w-px bg-[#E5E7EB] hidden md:block" />
-          <div className="flex items-center gap-2 font-bold tracking-tight text-lg">
-            <div className="w-5 h-5 bg-[#FFD400] rounded-[4px] shrink-0" /> Educator Dashboard
-          </div>
-        </div>
-
-        <div className="flex items-center gap-6 text-sm font-semibold text-[#111111]">
-          <span onClick={() => navigate("/courses")} className="hidden lg:block cursor-pointer hover:text-[#5F6368] transition-colors">My Courses</span>
-          <div onClick={() => navigate("/profile")} className="flex items-center gap-2 cursor-pointer hover:text-[#5F6368] transition-colors">
-            <div className="w-8 h-8 rounded-full bg-[#FFD400] flex items-center justify-center text-[13px] font-bold border border-[#E5E7EB] overflow-hidden shrink-0">
-              {userData?.photoUrl ? (
-                <img src={userData.photoUrl} alt="" className="w-full h-full object-cover" />
-              ) : (
-                userData?.name?.charAt(0)?.toUpperCase() || "E"
-              )}
-            </div>
-            <span className="hidden sm:block truncate max-w-[120px]">{userData?.name || "Educator"}</span>
-            <ChevronDown className="w-4 h-4 hidden sm:block text-[#9CA3AF]" />
-          </div>
-        </div>
-      </header>
 
       {/* ── Main Dashboard Content ── */}
       <main className="max-w-[1200px] mx-auto px-6 lg:px-10 py-10 space-y-8">

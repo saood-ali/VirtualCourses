@@ -11,24 +11,7 @@ function MyEnrolledCourses() {
   return (
     <div className="min-h-screen bg-white text-[#111111] font-sans antialiased">
 
-      {/* ── Sticky Top Nav — identical to AllCourses ── */}
-      <header className="sticky top-0 z-30 bg-white border-b border-[#E5E7EB] h-14 flex items-center px-5 sm:px-8 gap-4">
-        <button
-          onClick={() => navigate("/")}
-          className="flex items-center gap-2 text-[#111111] hover:text-[#5F6368] transition-colors font-medium cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm">Back</span>
-        </button>
-        <div className="h-4 w-px bg-[#E5E7EB]" />
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-3 bg-[#FFD400] rounded-[2px] shrink-0" />
-          <span className="text-xs font-semibold tracking-wide uppercase">VirtualCourses</span>
-        </div>
-        <span className="ml-auto text-xs font-medium text-[#9CA3AF]">
-          {courses.length} {courses.length === 1 ? "course" : "courses"}
-        </span>
-      </header>
+
 
       <div className="max-w-[1400px] mx-auto px-4 sm:px-8 py-8">
 

@@ -102,33 +102,7 @@ export default function Courses() {
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-[#111111] font-sans antialiased selection:bg-[#FFD400]/30 pb-20 relative">
       
-      {/* ── Navbar ── */}
-      <header className="sticky top-0 z-40 bg-white border-b border-[#E5E7EB] h-[72px] flex items-center px-6 lg:px-10 justify-between shadow-sm">
-        <div className="flex items-center gap-6">
-          <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 text-[#5F6368] hover:text-[#111111] font-semibold text-[14px] transition-colors cursor-pointer">
-            <ArrowLeft className="w-4 h-4" /> Dashboard
-          </button>
-          <div className="h-5 w-px bg-[#E5E7EB] hidden md:block" />
-          <div onClick={() => navigate("/")} className="flex items-center gap-2 font-bold tracking-tight text-lg cursor-pointer">
-            <div className="w-5 h-5 bg-[#FFD400] rounded-[4px] shrink-0" /> VirtualCourses
-          </div>
-        </div>
 
-        <div className="flex items-center gap-6 text-sm font-semibold text-[#111111]">
-          <span className="hidden lg:block text-[#111111] border-b-2 border-[#FFD400] pb-[25px] mt-[25px]">My Courses</span>
-          <div onClick={() => navigate("/profile")} className="flex items-center gap-2 cursor-pointer hover:text-[#5F6368] transition-colors">
-            <div className="w-8 h-8 rounded-full bg-[#FFD400] flex items-center justify-center text-[13px] font-bold border border-[#E5E7EB] overflow-hidden shrink-0">
-              {userData?.photoUrl ? (
-                 <img src={userData.photoUrl} alt="" className="w-full h-full object-cover" />
-              ) : (
-                 userData?.name?.charAt(0)?.toUpperCase() || "E"
-              )}
-            </div>
-            <span className="hidden sm:block truncate max-w-[120px]">{userData?.name || "Educator"}</span>
-            <ChevronDown className="w-4 h-4 hidden sm:block text-[#9CA3AF]" />
-          </div>
-        </div>
-      </header>
 
       {/* ── Main Content ── */}
       <main className="max-w-[1200px] mx-auto px-6 lg:px-10 py-10 space-y-8">

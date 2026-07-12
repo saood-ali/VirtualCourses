@@ -1,4 +1,6 @@
 export const serverUrl = import.meta.env.VITE_SERVER_URL;
+import Navbar from './components/Navbar.jsx';
+import Footer from './components/Footer.jsx';
 import Home from './pages/Home.jsx';
 import SignUp from './pages/SignUp.jsx';
 import Login from './pages/Login.jsx';
@@ -52,10 +54,12 @@ function App() {
     );
   }
   return (
-    <div>
-    <ToastContainer />
-    <ScrollToTop/>
-      <Routes>
+    <div className="flex flex-col min-h-screen">
+      <Navbar />
+      <ToastContainer />
+      <ScrollToTop/>
+      <main className="flex-1">
+        <Routes>
         <Route path='/' element={<Home/>} />
         <Route path='/signup' element={!userData? <SignUp/> : <Navigate to={"/"}/>} />
         <Route path='/login' element={<Login/>} />
@@ -74,7 +78,9 @@ function App() {
         <Route path='/mycourses' element={userData ? <MyEnrolledCourses/> : <Navigate to={"/signup"}/>} />
         <Route path='/search' element={userData ? <SearchWithAi/> : <Navigate to={"/signup"}/>} />  
         <Route path="/course/live/:courseId" element={<LiveClass />} />
-      </Routes>
+        </Routes>
+      </main>
+      <Footer />
     </div>
   )
 }

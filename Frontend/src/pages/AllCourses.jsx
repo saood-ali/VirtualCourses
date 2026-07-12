@@ -36,57 +36,37 @@ function AllCourses() {
   return (
     <div className="min-h-screen bg-white text-[#111111] font-sans antialiased">
 
-      {/* ── Sticky Top Nav ── */}
-      <header className="sticky top-0 z-30 bg-white border-b border-[#E5E7EB] h-14 flex items-center px-5 sm:px-8 gap-4">
-        <button
-          onClick={() => navigate("/")}
-          className="flex items-center gap-2 text-[#111111] hover:text-[#5F6368] transition-colors font-medium cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm">Back</span>
-        </button>
-        <div className="h-4 w-px bg-[#E5E7EB]" />
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-3 bg-[#FFD400] rounded-[2px] shrink-0" />
-          <span className="text-xs font-semibold tracking-wide uppercase">VirtualCourses</span>
-        </div>
-        <div className="ml-auto flex items-center gap-3">
-          <span className="text-xs font-medium text-[#9CA3AF] hidden sm:block">
-            {filterCourses.length} {filterCourses.length === 1 ? "course" : "courses"}
-          </span>
-          {/* Mobile filter toggle */}
-          <button
-            onClick={() => setShowFilters((p) => !p)}
-            className="lg:hidden flex items-center gap-2 h-[34px] px-3 border border-[#E5E7EB] text-[#5F6368] text-xs font-semibold rounded-[6px] transition-all cursor-pointer hover:bg-[#F8F9FA]"
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            Filters
-            {category.length > 0 && (
-              <span className="inline-flex items-center justify-center w-4 h-4 text-[9px] font-bold bg-[#FFD400] text-[#111111] rounded-full">
-                {category.length}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => navigate("/search")}
-            className="flex items-center gap-2 h-[34px] px-4 bg-[#FFD400] hover:bg-[#e6be00] text-[#111111] text-xs font-semibold rounded-[6px] transition-all cursor-pointer"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Search with AI</span>
-          </button>
-        </div>
-      </header>
-
       <div className="max-w-[1400px] mx-auto px-4 sm:px-8 py-8">
 
         {/* ── Page Header ── */}
-        <div className="mb-8">
-          <h1 className="text-[40px] font-bold text-[#111111] leading-none">All Courses</h1>
-          <p className="text-base text-[#5F6368] mt-2">
-            {category.length > 0
-              ? `Showing results for: ${category.join(", ")}`
-              : "Browse our complete library of expert-led courses."}
-          </p>
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-[40px] font-bold text-[#111111] leading-none">All Courses</h1>
+            <p className="text-base text-[#5F6368] mt-2">
+              {category.length > 0
+                ? `Showing results for: ${category.join(", ")}`
+                : "Browse our complete library of expert-led courses."}
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-medium text-[#9CA3AF] hidden sm:block">
+              {filterCourses.length} {filterCourses.length === 1 ? "course" : "courses"}
+            </span>
+            {/* Mobile filter toggle */}
+            <button
+              onClick={() => setShowFilters((p) => !p)}
+              className="lg:hidden flex items-center gap-2 h-[34px] px-3 border border-[#E5E7EB] text-[#5F6368] text-xs font-semibold rounded-[6px] transition-all cursor-pointer hover:bg-[#F8F9FA]"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              Filters
+              {category.length > 0 && (
+                <span className="inline-flex items-center justify-center w-4 h-4 text-[9px] font-bold bg-[#FFD400] text-[#111111] rounded-full">
+                  {category.length}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
 
         <div className="border-t border-[#E5E7EB] mb-8" />
