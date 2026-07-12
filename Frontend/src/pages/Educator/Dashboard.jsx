@@ -95,7 +95,7 @@ export default function Dashboard() {
             <p className="text-[15px] font-medium text-[#5F6368] mt-1">Welcome back, track your course performance and earnings here.</p>
           </div>
           <button
-            onClick={() => navigate("/createcourses")}
+            onClick={() => navigate("/courses?create=true")}
             className="h-[44px] px-5 bg-[#FFD400] hover:bg-[#e6be00] text-[#111111] text-[14px] font-bold rounded-[6px] transition-all flex items-center gap-2 cursor-pointer shadow-sm"
           >
             <Plus className="w-4 h-4" /> Create New Course

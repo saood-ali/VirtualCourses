@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { 
   ArrowLeft, Plus, ChevronDown, BookOpen, Edit3, Image as ImageIcon, 
@@ -13,6 +13,7 @@ import { setCreatorCourseData } from "../../redux/courseSlice.js";
 
 export default function Courses() {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { userData } = useSelector((state) => state.user);
   const { creatorCourseData: reduxCourseData } = useSelector((state) => state.course);
@@ -26,6 +27,14 @@ export default function Courses() {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    if (searchParams.get("create") === "true") {
+      setIsCreateModalOpen(true);
+      navigate("/courses", { replace: true });
+    }
+  }, [location.search, navigate]);
   
   const creatorCourseData = localCourseData !== null ? localCourseData : reduxCourseData;
 

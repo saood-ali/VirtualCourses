@@ -224,7 +224,7 @@ export default function ViewCourse() {
         </div>
 
         <div className="flex items-center gap-6 text-sm font-semibold text-[#111111]">
-          <span onClick={() => navigate("/myenrolledcourses")} className="hidden lg:block cursor-pointer hover:text-[#5F6368] transition-colors">My Learning</span>
+          <span onClick={() => navigate("/mycourses")} className="hidden lg:block cursor-pointer hover:text-[#5F6368] transition-colors">My Learning</span>
           <div onClick={() => navigate("/profile")} className="flex items-center gap-2 cursor-pointer hover:text-[#5F6368] transition-colors">
             <div className="w-8 h-8 rounded-full bg-[#FFD400] flex items-center justify-center text-sm font-bold border border-[#E5E7EB] overflow-hidden">
               {userData?.photoUrl ? (
