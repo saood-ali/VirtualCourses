@@ -1,46 +1,48 @@
-import axiosClient from "../../config/axiosClient.js";
-import axios from "axios";
 import React, { useEffect, useState } from "react";
-import { BsArrowReturnLeft } from "react-icons/bs";
-import { FaCheckCircle } from "react-icons/fa";
-import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
-import { setLectureData } from "../../redux/lectureSlice.js";
+import { useDispatch, useSelector } from "react-redux";
+import axios from "axios";
 import { toast } from "react-toastify";
 import { ClipLoader, HashLoader } from "react-spinners";
-import Iridescence from "../../components/Iridescence.jsx";
 import ReactPlayer from 'react-player';
+import { 
+  ArrowLeft, ChevronDown, Trash2, Upload, Video, 
+  CheckCircle2, AlertCircle, Eye, PlayCircle 
+} from "lucide-react";
 
-function EditLecture() {
+import axiosClient from "../../config/axiosClient.js";
+import { setLectureData } from "../../redux/lectureSlice.js";
+
+export default function EditLecture() {
   const { courseId, lectureId } = useParams();
-  const { lectureData } = useSelector((state) => state.lecture);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const { userData } = useSelector(state => state.user);
+  const { lectureData } = useSelector(state => state.lecture);
 
   // Try to find in Redux first 
-  const preSelectedLecture = lectureData.find((lecture) => lecture._id === lectureId);
+  const preSelectedLecture = lectureData.find(l => l._id === lectureId);
 
   // --- STATE MANAGEMENT ---
   const [lectureTitle, setLectureTitle] = useState(preSelectedLecture?.lectureTitle || "");
   const [isPreviewFree, setIsPreviewFree] = useState(preSelectedLecture?.isPreviewFree || false);
-  const [currentVideoUrl, setCurrentVideoUrl] = useState(preSelectedLecture?.videoUrl || ""); // Local state for preview
+  const [currentVideoUrl, setCurrentVideoUrl] = useState(preSelectedLecture?.videoUrl || "");
   const [videoFile, setVideoFile] = useState(null);
 
   // Loading States
-  const [pageLoading, setPageLoading] = useState(!preSelectedLecture); // Show loader if data isn't in Redux
-  const [loading, setLoading] = useState(false); // Update button loading
-  const [loading1, setLoading1] = useState(false); // Remove button loading
+  const [pageLoading, setPageLoading] = useState(!preSelectedLecture);
+  const [loading, setLoading] = useState(false); 
+  const [loading1, setLoading1] = useState(false); 
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
-
-  // --- 1. NEW: Fetch Data on Refresh ---
+  // --- 1. Fetch Data on Refresh ---
   useEffect(() => {
     const fetchLectureDetails = async () => {
       if (!preSelectedLecture) {
         try {
           setPageLoading(true);
           const { data } = await axiosClient.get(`/api/course/getlecture/${lectureId}`);
-
           if (data && data.success !== false) {
             setLectureTitle(data.lectureTitle);
             setIsPreviewFree(data.isPreviewFree);
@@ -48,38 +50,30 @@ function EditLecture() {
           }
         } catch (error) {
           console.error("Failed to fetch lecture:", error);
-          toast.error("Could not load lecture details. Please try again.");
+          toast.error("Could not load lecture details.");
         } finally {
           setPageLoading(false);
         }
       }
     };
-
     fetchLectureDetails();
   }, [lectureId, preSelectedLecture]);
-
 
   // --- Helper: Upload Video ---
   const uploadVideoToCloudinary = async (file) => {
     let signData;
-    
-    // Step 1: Get signature from backend
     try {
       const response = await axiosClient.get(`/api/upload/signature`, {
-        headers: {
-          "ngrok-skip-browser-warning": "69420"
-        }
+        headers: { "ngrok-skip-browser-warning": "69420" }
       });
       signData = response.data;
     } catch (error) {
       console.error("Signature Fetch Error:", error.response?.data || error.message);
-      throw new Error("Failed to get upload signature from server: " + (error.message || ""));
+      throw new Error("Failed to get upload signature from server");
     }
 
-    // Step 2: Upload to Cloudinary
     try {
       const { signature, timestamp, apiKey, cloudName, folder } = signData;
-
       const formData = new FormData();
       formData.append("file", file);
       formData.append("api_key", apiKey);
@@ -97,49 +91,44 @@ function EditLecture() {
           }
         }
       );
-
       return uploadRes.data.secure_url;
     } catch (error) {
       console.error("Cloudinary Upload Error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.error?.message || "Video upload to Cloudinary failed");
+      throw new Error(error.response?.data?.error?.message || "Video upload failed");
     }
   };
 
   // --- Handler: Update Lecture ---
   const handleEditLecture = async () => {
+    if (!lectureTitle.trim()) {
+      toast.error("Lecture title is required.");
+      return;
+    }
+
     setLoading(true);
     try {
-      let finalVideoUrl = currentVideoUrl; // Default to existing URL
-
+      let finalVideoUrl = currentVideoUrl;
       if (videoFile) {
-        toast.info("Uploading video to cloud... please wait");
+        toast.info("Uploading video... please wait");
         finalVideoUrl = await uploadVideoToCloudinary(videoFile);
       }
 
       const payload = {
         lectureTitle,
         isPreviewFree,
-        videoUrl: finalVideoUrl // Always send the URL (either old or new)
+        videoUrl: finalVideoUrl
       };
 
-      const result = await axiosClient.post(
-        `/api/course/editlecture/${lectureId}`,
-        payload
-      );
-
-      console.log(result.data);
-
-      // Update Redux Store so the UI stays consistent without refresh
+      const result = await axiosClient.post(`/api/course/editlecture/${lectureId}`, payload);
+      
       const updatedLectures = lectureData.map(l => l._id === lectureId ? result.data : l);
       dispatch(setLectureData(updatedLectures));
 
       toast.success("Lecture Updated Successfully");
-      // Go back to the lecture list for this course
       navigate(`/createlecture/${courseId}`);
     } catch (error) {
-      console.log(error);
-      const msg = error.response?.data?.message || "Update failed";
-      toast.error(msg);
+      console.error(error);
+      toast.error(error.response?.data?.message || "Update failed");
     } finally {
       setLoading(false);
       setUploadProgress(0);
@@ -148,85 +137,169 @@ function EditLecture() {
 
   // --- Handler: Remove Lecture ---
   const removeLecture = async () => {
-    if (!window.confirm("Are you sure you want to delete this lecture?")) return;
-
+    if (!window.confirm("Are you sure you want to permanently delete this lecture?")) return;
     setLoading1(true);
     try {
-      const result = await axiosClient.delete(`/api/course/removelecture/${lectureId}`);
-      console.log(result.data);
-
+      await axiosClient.delete(`/api/course/removelecture/${lectureId}`);
       const filtered = lectureData.filter(l => l._id !== lectureId);
       dispatch(setLectureData(filtered));
-
-      navigate(`/createlecture/${courseId}`);
       toast.success("Lecture Removed");
+      navigate(`/createlecture/${courseId}`);
     } catch (error) {
-      console.log(error);
+      console.error(error);
       toast.error(error.response?.data?.message || "Failed to remove");
     } finally {
       setLoading1(false);
     }
   };
 
-  // --- RENDER: Loading Screen ---
   if (pageLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-        <HashLoader color="#000000" size={50} />
-        <p className="mt-4 text-gray-500 font-medium">Fetching lecture details...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#F8F9FA]">
+        <HashLoader color="#FFD400" size={50} />
+        <p className="mt-4 text-[#5F6368] text-[14px] font-medium">Loading lecture details...</p>
       </div>
     );
   }
 
-  // --- RENDER: Main Form ---
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-
-      {/* Background */}
-      <div className="absolute inset-0 -z-10">
-        <Iridescence
-          color={[0.9, 0.9, 0.9]}
-          mouseReact={false}
-          speed={0.7}
-          amplitude={0.1}
-        />
-      </div>
-
-      {/* Content Card */}
-      <div className="w-full max-w-xl bg-white/90 backdrop-blur-sm rounded-xl shadow-2xl p-6 space-y-6 border border-white/50">
-
-        {/* Header */}
-        <div className="flex items-center gap-2 mb-2">
-          <BsArrowReturnLeft className="text-gray-600 cursor-pointer hover:text-black transition" onClick={() => navigate(`/createlecture/${courseId}`)} />
-          <h2 className="text-xl font-semibold text-gray-800">
-            Update course lecture
-          </h2>
+    <div className="min-h-screen bg-[#F8F9FA] text-[#111111] font-sans antialiased selection:bg-[#FFD400]/30 pb-24">
+      
+      {/* ── Navbar ── */}
+      <header className="sticky top-0 z-50 bg-white border-b border-[#E5E7EB] h-[72px] flex items-center px-6 lg:px-10 justify-between shadow-sm">
+        <div className="flex items-center gap-6">
+          <button onClick={() => navigate(`/createlecture/${courseId}`)} className="flex items-center gap-2 text-[#5F6368] hover:text-[#111111] font-semibold text-[14px] transition-colors cursor-pointer">
+            <ArrowLeft className="w-4 h-4" /> Back to Curriculum
+          </button>
+          <div className="h-5 w-px bg-[#E5E7EB] hidden md:block" />
+          <div onClick={() => navigate("/")} className="flex items-center gap-2 font-bold tracking-tight text-lg cursor-pointer">
+            <div className="w-5 h-5 bg-[#FFD400] rounded-[4px] shrink-0" /> VirtualCourses
+          </div>
         </div>
 
-        <button className="mt-2 px-4 py-2 bg-red-600 text-white rounded-md
-        hover:bg-red-800 transition-all text-sm cursor-pointer shadow-md" disabled={loading1} onClick={removeLecture}>
-          {loading1 ? <ClipLoader size={20} color="white" /> : "Remove Lecture"}</button>
+        <div className="flex items-center gap-6 text-sm font-semibold text-[#111111]">
+          <div onClick={() => navigate("/profile")} className="flex items-center gap-2 cursor-pointer hover:text-[#5F6368] transition-colors">
+            <div className="w-8 h-8 rounded-full bg-[#FFD400] flex items-center justify-center text-[13px] font-bold border border-[#E5E7EB] overflow-hidden shrink-0">
+              {userData?.photoUrl ? (
+                 <img src={userData.photoUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                 userData?.name?.charAt(0)?.toUpperCase() || "E"
+              )}
+            </div>
+            <span className="hidden sm:block truncate max-w-[120px]">{userData?.name || "Educator"}</span>
+            <ChevronDown className="w-4 h-4 hidden sm:block text-[#9CA3AF]" />
+          </div>
+        </div>
+      </header>
 
-        <div className="space-y-4 ">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="lectureTitle">LectureTitle*</label>
-            <input type="text" className="w-full p-3 border border-gray-300 rounded-md
-             text-sm focus:ring-2 focus:ring-black focus:outline-none bg-white/50" required onChange={(e) => setLectureTitle(e.target.value)}
-              value={lectureTitle} />
+      {/* ── Main Layout ── */}
+      <main className="max-w-[1200px] mx-auto px-6 lg:px-10 py-10">
+        
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-[32px] font-extrabold text-[#111111] leading-tight tracking-tight">Edit Lecture</h1>
+          <p className="text-[15px] font-medium text-[#5F6368] mt-1">Modify title, update the video, and configure preview settings.</p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* ── Left Column: Form & Upload ── */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-white border border-[#E5E7EB] rounded-[8px] p-8 shadow-sm">
+              <h2 className="text-[18px] font-bold text-[#111111] mb-6">Lecture Content</h2>
+              
+              <div className="space-y-6">
+                
+                {/* Title */}
+                <div>
+                  <label htmlFor="lectureTitle" className="block text-[13px] font-bold text-[#111111] mb-2">Lecture Title</label>
+                  <div className="relative flex items-center h-[46px] bg-white border border-[#E5E7EB] rounded-[6px] px-4 focus-within:border-[#FFD400] focus-within:ring-1 focus-within:ring-[#FFD400] transition-shadow">
+                    <PlayCircle className="w-4.5 h-4.5 text-[#9CA3AF] mr-2.5 shrink-0" />
+                    <input
+                      id="lectureTitle" type="text"
+                      placeholder="Enter lecture title"
+                      value={lectureTitle} onChange={(e) => setLectureTitle(e.target.value)}
+                      className="w-full h-full bg-transparent text-[14px] text-[#111111] placeholder-[#9CA3AF] focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Upload Section */}
+                <div>
+                  <label className="block text-[13px] font-bold text-[#111111] mb-2">Lecture Video</label>
+                  <div className="w-full relative border-2 border-dashed border-[#E5E7EB] bg-[#F8F9FA] rounded-[6px] p-6 hover:border-[#FFD400] hover:bg-[#FFD400]/5 transition-colors group text-center cursor-pointer">
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={(e) => setVideoFile(e.target.files[0])}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    />
+                    <div className="flex flex-col items-center pointer-events-none">
+                      <div className="w-12 h-12 rounded-full bg-white shadow-sm border border-[#E5E7EB] flex items-center justify-center mb-3 text-[#5F6368] group-hover:text-[#FFD400] transition-colors">
+                        <Upload className="w-5 h-5" />
+                      </div>
+                      <span className="text-[14px] font-bold text-[#111111] mb-1">
+                        {videoFile ? videoFile.name : "Click or drag to upload new video"}
+                      </span>
+                      <span className="text-[12px] font-medium text-[#9CA3AF]">
+                        {videoFile ? "File selected. Ready to save." : "MP4, WebM, or OGG up to 2GB"}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Upload Progress Bar */}
+                  {loading && uploadProgress > 0 && (
+                    <div className="mt-4 bg-[#F8F9FA] border border-[#E5E7EB] rounded-[6px] p-4">
+                      <div className="flex justify-between text-[12px] font-bold text-[#5F6368] mb-2">
+                        <span>Uploading Video...</span>
+                        <span>{uploadProgress}%</span>
+                      </div>
+                      <div className="w-full bg-[#E5E7EB] rounded-full h-2 overflow-hidden">
+                        <div className="bg-[#111111] h-2 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Video (Optional update)</label>
-
-            {/* Display Current Video if it exists in state */}
-            {currentVideoUrl && !videoFile && (
-              <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-md flex flex-col gap-2">
-                <div className="flex items-center gap-2 text-green-700 text-sm font-medium">
-                  <FaCheckCircle />
-                  <span>Current Video Uploaded</span>
+          {/* ── Right Column: Settings & Media ── */}
+          <div className="lg:col-span-1 space-y-6">
+            
+            {/* Settings Card */}
+            <div className="bg-white border border-[#E5E7EB] rounded-[8px] p-6 shadow-sm">
+              <h2 className="text-[16px] font-bold text-[#111111] mb-4">Settings</h2>
+              
+              <label className="flex items-center gap-3 p-4 rounded-[6px] border border-[#E5E7EB] cursor-pointer hover:bg-[#F8F9FA] transition-colors">
+                <input
+                  type="checkbox"
+                  checked={isPreviewFree}
+                  onChange={() => setIsPreviewFree(!isPreviewFree)}
+                  className="w-4 h-4 text-[#FFD400] bg-white border-[#E5E7EB] rounded focus:ring-[#FFD400] focus:ring-2 cursor-pointer"
+                />
+                <div className="flex flex-col">
+                  <span className="text-[13px] font-bold text-[#111111] flex items-center gap-1.5">
+                    <Eye className="w-3.5 h-3.5 text-[#5F6368]" /> Free Preview
+                  </span>
+                  <span className="text-[12px] font-medium text-[#5F6368] mt-0.5">
+                    Allow students to watch before buying
+                  </span>
                 </div>
-                {/* Small Preview Player */}
-                <div className="w-full aspect-video rounded-md overflow-hidden bg-black relative">
+              </label>
+            </div>
+
+            {/* Current Video Preview */}
+            {currentVideoUrl && (
+              <div className="bg-white border border-[#E5E7EB] rounded-[8px] p-6 shadow-sm">
+                <h2 className="text-[16px] font-bold text-[#111111] mb-1 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#22C55E]" /> Active Video
+                </h2>
+                <p className="text-[12px] font-medium text-[#5F6368] mb-4">
+                  Currently playing for enrolled students.
+                </p>
+                <div className="w-full aspect-video rounded-[6px] overflow-hidden bg-black border border-[#E5E7EB]">
                   <ReactPlayer
                     url={currentVideoUrl}
                     width="100%"
@@ -235,48 +308,45 @@ function EditLecture() {
                     light={true}
                   />
                 </div>
-                <p className="text-xs text-gray-500">To replace this video, choose a new file below.</p>
               </div>
             )}
 
-            <input
-              type="file"
-              className="w-full p-2 border border-gray-300 rounded-md text-sm file:mr-4 file:py-2 
-              file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-gray-800 file:text-white
-              hover:file:bg-gray-700 cursor-pointer bg-white/50"
-              accept='video/*'
-              onChange={(e) => setVideoFile(e.target.files[0])}
-            />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              className="accent-black h-4 w-4 cursor-pointer"
-              id="isFree"
-              checked={isPreviewFree}
-              onChange={() => setIsPreviewFree(prev => !prev)}
-            />
-            <label htmlFor="isFree" className="text-sm text-gray-700 cursor-pointer">Is this Video FREE?</label>
-          </div>
-
-          {/* Progress Bar Display */}
-          {loading && uploadProgress > 0 && (
-            <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 overflow-hidden">
-              <div className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
-              <p className="text-xs text-center mt-1 text-gray-500">Uploading: {uploadProgress}%</p>
+            {/* Danger Zone */}
+            <div className="bg-white border border-red-200 rounded-[8px] p-6 shadow-sm">
+              <h2 className="text-[16px] font-bold text-red-600 mb-1 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" /> Danger Zone
+              </h2>
+              <p className="text-[12px] font-medium text-[#5F6368] mb-4">
+                Permanently delete this lecture and its video file.
+              </p>
+              <button 
+                onClick={removeLecture} disabled={loading1}
+                className="w-full h-[40px] bg-red-50 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white text-[13px] font-bold rounded-[6px] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
+              >
+                {loading1 ? <ClipLoader size={16} color="currentColor" /> : <><Trash2 className="w-4 h-4" /> Delete Lecture</>}
+              </button>
             </div>
-          )}
+            
+          </div>
+        </div>
+      </main>
 
-        </div>
-        <div className="pt-4">
-          <button className="w-full bg-black text-white py-3 rounded-md text-sm font-medium 
-         hover:bg-gray-800 transition cursor-pointer shadow-lg" disabled={loading} onClick={handleEditLecture}>
-            {loading ? <ClipLoader color="white" size={20} /> : "Update Lecture"}</button>
-        </div>
+      {/* ── Fixed Bottom Footer (Save Actions) ── */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E5E7EB] px-6 lg:px-10 py-4 z-40 flex items-center justify-end gap-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <button 
+          onClick={() => navigate(`/createlecture/${courseId}`)}
+          className="h-[44px] px-6 bg-white border border-[#E5E7EB] hover:bg-[#F8F9FA] text-[#111111] text-[14px] font-bold rounded-[6px] transition-colors cursor-pointer"
+        >
+          Cancel
+        </button>
+        <button 
+          onClick={handleEditLecture} disabled={loading}
+          className="h-[44px] px-8 bg-[#FFD400] hover:bg-[#e6be00] text-[#111111] text-[14px] font-bold rounded-[6px] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm disabled:opacity-75"
+        >
+          {loading ? <ClipLoader size={18} color="#111111" /> : "Save Changes"}
+        </button>
       </div>
+
     </div>
   );
 }
-
-export default EditLecture;
