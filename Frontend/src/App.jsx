@@ -25,8 +25,7 @@ import ScrollToTop from './components/ScrollToTop.jsx'
 import MyEnrolledCourses from './pages/MyEnrolledCourses.jsx'
 import useGetAllReviews from './customHooks/getAllReviews.js'
 import SearchWithAi from './pages/SearchWithAi.jsx'
-import { ClipLoader } from 'react-spinners';
-import { DotPattern } from './components/DotPattern.jsx';
+import PageLoader from './components/PageLoader.jsx';
 import LiveClass from "./pages/LiveClass.jsx";
 
 
@@ -37,26 +36,27 @@ function App() {
   const isUserLoading = useGetCurrentUser();
   const {userData} = useSelector(state=>state.user);
   if (isUserLoading) {
-    return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-gray-50 relative overflow-hidden">
-         <DotPattern className="absolute inset-0 opacity-50 text-gray-300" />
-         
-         <div className="z-10 bg-white/80 backdrop-blur-md border border-white/20 shadow-xl rounded-2xl p-8 flex flex-col items-center gap-4">
-            
-            <ClipLoader color="#000000" size={50} speedMultiplier={0.99} />
-            
-            <div className="flex flex-col items-center">
-              <span className="text-gray-800 font-semibold text-lg tracking-wide">Virtual Courses</span>
-              <span className="text-gray-500 text-xs uppercase tracking-widest mt-1">Verifying Session...</span>
-            </div>
-         </div>
-      </div>
-    );
+    return <PageLoader message="Verifying Session..." />;
   }
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <ToastContainer />
+      <ToastContainer
+        position="bottom-right"
+        autoClose={3500}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnHover
+        draggable
+        theme="light"
+        toastClassName={() =>
+          "relative flex items-start gap-3 bg-white text-[#111111] text-sm font-medium rounded-[8px] shadow-[0_4px_24px_rgba(0,0,0,0.10)] border border-[#EAEAEA] px-5 py-4 mb-4 overflow-hidden cursor-pointer"
+        }
+        progressStyle={{ background: "#FFD400", height: "2px" }}
+        style={{ bottom: "24px", right: "24px", width: "340px" }}
+        icon={false}
+      />
       <ScrollToTop/>
       <main className="flex-1">
         <Routes>

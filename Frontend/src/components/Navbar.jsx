@@ -68,10 +68,9 @@ export default function Navbar() {
       {/* ── Left: Brand ── */}
       <div 
         onClick={() => navigate("/")} 
-        className="flex items-center gap-2.5 font-extrabold tracking-tight text-[18px] text-[#111111] cursor-pointer"
+        className="flex items-center cursor-pointer"
       >
-        <div className="w-6 h-6 bg-[#FFD400] rounded-[6px] shrink-0 shadow-sm" />
-        VirtualCourses
+        <img src="/logo.svg" alt="VirtualCourses" className="h-12 w-auto" />
       </div>
 
       {/* ── Center: Main Navigation ── */}

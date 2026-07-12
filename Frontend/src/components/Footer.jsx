@@ -21,18 +21,17 @@ export default function Footer() {
           <div className="lg:col-span-2 flex flex-col items-start pr-4">
             <div 
               onClick={() => navigate("/")} 
-              className="flex items-center gap-2.5 font-extrabold tracking-tight text-[22px] text-[#111111] cursor-pointer mb-4"
+              className="flex items-center cursor-pointer mb-4"
             >
-              <div className="w-7 h-7 bg-[#FFD400] rounded-[6px] shrink-0 shadow-sm" />
-              VirtualCourses
+              <img src="/logo.svg" alt="VirtualCourses" className="h-12 w-auto" />
             </div>
             <p className="text-[14px] text-[#5F6368] leading-relaxed mb-6 max-w-sm">
               The premium, AI-powered learning marketplace for modern professionals. Empowering educators to teach, and students to master new skills with unprecedented speed.
             </p>
             <div className="flex items-center gap-4 text-[#9CA3AF]">
-              <Twitter className="w-5 h-5 hover:text-[#111111] cursor-pointer transition-colors" />
-              <Github className="w-5 h-5 hover:text-[#111111] cursor-pointer transition-colors" />
-              <Linkedin className="w-5 h-5 hover:text-[#111111] cursor-pointer transition-colors" />
+              <Twitter className="w-6 h-6 hover:text-[#111111] cursor-pointer transition-colors" />
+              <Github className="w-6 h-6 hover:text-[#111111] cursor-pointer transition-colors" />
+              <Linkedin className="w-6 h-6 hover:text-[#111111] cursor-pointer transition-colors" />
             </div>
           </div>
 
