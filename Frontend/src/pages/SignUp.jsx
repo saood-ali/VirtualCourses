@@ -176,7 +176,7 @@ function SignUp() {
                     id="name"
                     type="text"
                     placeholder="Enter your name"
-                    className="w-full h-full bg-transparent text-xs focus:outline-none placeholder-[#9CA3AF]"
+                    className="w-full h-full bg-transparent text-[13px] focus:outline-none placeholder-[#9CA3AF]"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                   />
@@ -194,7 +194,7 @@ function SignUp() {
                     id="email"
                     type="email"
                     placeholder="Enter your email"
-                    className="w-full h-full bg-transparent text-xs focus:outline-none placeholder-[#9CA3AF]"
+                    className="w-full h-full bg-transparent text-[13px] focus:outline-none placeholder-[#9CA3AF]"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
@@ -212,7 +212,7 @@ function SignUp() {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
-                    className="w-full h-full bg-transparent text-xs focus:outline-none placeholder-[#9CA3AF] pr-8"
+                    className="w-full h-full bg-transparent text-[13px] focus:outline-none placeholder-[#9CA3AF] pr-8"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
