@@ -11,7 +11,7 @@ import ForgetPassword from './pages/ForgetPassword.jsx'
 import EditProfile from './pages/EditProfile.jsx'
 import Dashboard from './pages/Educator/Dashboard.jsx'
 import Courses from './pages/Educator/Courses.jsx'
-import CreateCourses from './pages/Educator/CreateCourses.jsx'
+
 import useGetCreatorCourse from './customHooks/getCreatorCourse.js'
 import EditCourse from './pages/Educator/EditCourse.jsx'
 import useGetPublishedCourse from './customHooks/getPublishedCourse.js'
@@ -65,7 +65,7 @@ function App() {
         <Route path='/allcourses' element={<AllCourses/>} />
         <Route path='/dashboard' element={userData?.role === "educator"? <Dashboard/> : <Navigate to={"/signup"}/>} />
         <Route path='/courses' element={userData?.role === "educator"? <Courses/> : <Navigate to={"/signup"}/>} />
-        <Route path='/createcourses' element={userData?.role === "educator"? <CreateCourses/> : <Navigate to={"/signup"}/>} />
+
         <Route path='/editcourse/:courseId' element={userData?.role === "educator"? <EditCourse/> : <Navigate to={"/signup"}/>} />
         <Route path='/createlecture/:courseId' element={userData?.role === "educator"? <CreateLecture/> : <Navigate to={"/signup"}/>} />
         <Route path='/editlecture/:courseId/:lectureId' element={userData?.role === "educator"? <EditLecture/> : <Navigate to={"/signup"}/>} />
