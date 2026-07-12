@@ -1,40 +1,51 @@
-import {useEffect, useState} from "react";
-import { useRef } from "react";
-import { BsArrowReturnLeft } from "react-icons/bs";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import img from "../../assets/empty_folder.png";
-import { FaEdit } from "react-icons/fa";
-import axiosClient from "../../config/axiosClient.js";
+import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { ClipLoader } from "react-spinners";
-import { useDispatch, useSelector } from "react-redux";
-import { setCreatorCourseData } from "../../redux/courseSlice.js";
-import { FlickeringGrid } from "../../components/FlickeringGrid.jsx"; 
+import { 
+  ArrowLeft, ChevronDown, CheckCircle2, Clock, Trash2, 
+  Upload, Image as ImageIcon, Video, AlertCircle, PlayCircle 
+} from "lucide-react";
 
-function EditCourse() {
+import axiosClient from "../../config/axiosClient.js";
+import { setCreatorCourseData } from "../../redux/courseSlice.js";
+import img from "../../assets/empty_folder.png";
+
+export default function EditCourse() {
   const navigate = useNavigate();
-  const {courseId} = useParams();
-  const thumb = useRef();
-  const [isPublished,setIsPublished] = useState(false);
-  const [selectCourse,setSelectCourse] = useState(null);
-  const [title,setTitle] = useState("");
-  const [subTitle,setSubTitle] = useState("");
-  const [description,setDescription] = useState("");
-  const [category,setCategory] = useState("");
-  const [level,setLevel] = useState("");
-  const [price,setPrice] = useState("");
-  const [frontendImage, setFrontendImage] = useState(img);
-  const [backendImage, setBackendImage] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [loading1, setLoading1] = useState(false);
+  const { courseId } = useParams();
   const dispatch = useDispatch();
+  const thumb = useRef();
+  
+  const { userData } = useSelector(state => state.user);
   const { creatorCourseData } = useSelector(state => state.course);
 
-  const handleThumbnail = (e)=>{
-    const file = e.target.files[0];
-    setBackendImage(file);
-    setFrontendImage(URL.createObjectURL(file));
-  }
+  // Form State
+  const [selectCourse, setSelectCourse] = useState(null);
+  const [isPublished, setIsPublished] = useState(false);
+  const [title, setTitle] = useState("");
+  const [subTitle, setSubTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("");
+  const [level, setLevel] = useState("");
+  const [price, setPrice] = useState("");
+  
+  // Image State
+  const [frontendImage, setFrontendImage] = useState(img);
+  const [backendImage, setBackendImage] = useState(null);
+  
+  // Loading States
+  const [loading, setLoading] = useState(false);
+  const [loading1, setLoading1] = useState(false);
+
+  const handleThumbnail = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setBackendImage(file);
+      setFrontendImage(URL.createObjectURL(file));
+    }
+  };
 
   const populateForm = (courseData) => {
     setSelectCourse(courseData);
@@ -49,13 +60,13 @@ function EditCourse() {
   };
 
   useEffect(() => {
-    // Step 1: instantly populate from Redux store so previous edits show right away
+    // Populate instantly from cache
     if (Array.isArray(creatorCourseData)) {
       const cached = creatorCourseData.find(c => c._id === courseId);
       if (cached) populateForm(cached);
     }
 
-    // Step 2: fetch fresh data from the server to overwrite with authoritative values
+    // Fetch authoritative
     const fetchCourseData = async () => {
       try {
         const result = await axiosClient.get(`/api/course/getcourse/${courseId}`);
@@ -64,15 +75,14 @@ function EditCourse() {
         console.log("Could not fetch course from server:", error);
       }
     };
-
     fetchCourseData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId]);
 
- const handleEditCourse = async () => {
+  const handleEditCourse = async () => {
     if (isPublished) {
       if (!title || !category || !level || !price) {
-        toast.error("Title, Category, Level, and Price are required to publish the course.");
+        toast.error("Title, Category, Level, and Price are required to publish.");
         setIsPublished(false);
         return;
       }
@@ -92,25 +102,16 @@ function EditCourse() {
     }
 
     try {
-      const result = await axiosClient.post(
-        `/api/course/editcourse/${courseId}`,
-        formData
-      );
-
-      // result.data = { message, course } from the backend
+      const result = await axiosClient.post(`/api/course/editcourse/${courseId}`, formData);
       const updatedCourse = result.data?.course ?? result.data;
       const currentCourses = Array.isArray(creatorCourseData) ? creatorCourseData : [];
 
-      // Replace the matching course entry in the creator list with fresh data
-      const updatedList = currentCourses.map(c =>
-        c._id === courseId ? { ...c, ...updatedCourse } : c
-      );
+      const updatedList = currentCourses.map(c => c._id === courseId ? { ...c, ...updatedCourse } : c);
       dispatch(setCreatorCourseData(updatedList));
 
       setLoading(false);
+      toast.success(result.data.message || "Course Updated Successfully");
       navigate("/courses");
-      toast.success(result.data.message || "Course Updated");
-
     } catch (error) {
       console.log(error);
       setLoading(false);
@@ -119,154 +120,268 @@ function EditCourse() {
   };
   
   const handleRemoveCourse = async () => {
+    if (!window.confirm("Are you sure you want to permanently delete this course?")) return;
     setLoading1(true);
     try {
-      const result = await axiosClient.delete(`/api/course/remove/${courseId}`);
-      console.log(result.data);
+      await axiosClient.delete(`/api/course/remove/${courseId}`);
       const currentCourses = Array.isArray(creatorCourseData) ? creatorCourseData : [];
       const filterCourses = currentCourses.filter(c => c._id !== courseId);
       dispatch(setCreatorCourseData(filterCourses));
       setLoading1(false);
-      navigate("/courses")
-      toast.success("Course Removed")
-      
+      toast.success("Course Removed");
+      navigate("/courses");
     } catch (error) {
-      console.log(error)
+      console.log(error);
       setLoading1(false);
-      toast.error(error.response.data.message)
+      toast.error(error.response?.data?.message || "Failed to delete");
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen relative w-full overflow-hidden bg-gray-50 flex justify-center py-10 px-4">
+    <div className="min-h-screen bg-[#F8F9FA] text-[#111111] font-sans antialiased selection:bg-[#FFD400]/30 pb-20">
       
-      {/*  FLICKERING GRID */}
-      <div className="absolute inset-0 z-0">
-        <FlickeringGrid
-          className="w-full h-full" 
-          squareSize={4}
-          gridGap={6}
-          color="#2E2E2E"    
-          maxOpacity={0.15}   
-          flickerChance={0.7}
-        />
-      </div>
+      {/* ── Navbar ── */}
+      <header className="sticky top-0 z-50 bg-white border-b border-[#E5E7EB] h-[72px] flex items-center px-6 lg:px-10 justify-between shadow-sm">
+        <div className="flex items-center gap-6">
+          <button onClick={() => navigate("/courses")} className="flex items-center gap-2 text-[#5F6368] hover:text-[#111111] font-semibold text-[14px] transition-colors cursor-pointer">
+            <ArrowLeft className="w-4 h-4" /> Back to Courses
+          </button>
+          <div className="h-5 w-px bg-[#E5E7EB] hidden md:block" />
+          <div onClick={() => navigate("/")} className="flex items-center gap-2 font-bold tracking-tight text-lg cursor-pointer">
+            <div className="w-5 h-5 bg-[#FFD400] rounded-[4px] shrink-0" /> VirtualCourses
+          </div>
+        </div>
 
-      {/*  Main Content Card */}
-      <div className="max-w-5xl w-full bg-white/95 backdrop-blur-sm rounded-lg shadow-md p-6 relative z-10">
+        <div className="flex items-center gap-6 text-sm font-semibold text-[#111111]">
+          <div onClick={() => navigate("/profile")} className="flex items-center gap-2 cursor-pointer hover:text-[#5F6368] transition-colors">
+            <div className="w-8 h-8 rounded-full bg-[#FFD400] flex items-center justify-center text-[13px] font-bold border border-[#E5E7EB] overflow-hidden shrink-0">
+              {userData?.photoUrl ? (
+                 <img src={userData.photoUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                 userData?.name?.charAt(0)?.toUpperCase() || "E"
+              )}
+            </div>
+            <span className="hidden sm:block truncate max-w-[120px]">{userData?.name || "Educator"}</span>
+            <ChevronDown className="w-4 h-4 hidden sm:block text-[#9CA3AF]" />
+          </div>
+        </div>
+      </header>
+
+      {/* ── Main Layout ── */}
+      <main className="max-w-[1200px] mx-auto px-6 lg:px-10 py-10">
         
-        {/* Top Bar */}
-        <div className="flex items-center justify-center gap-[20px] 
-        md:justify-between flex-col md:flex-row mb-6 relative">
-          <BsArrowReturnLeft
-            className="top-[-20%] md:top-[20%]
-            absolute left-0 md:left-[2%] w-[22px] h-[22px] cursor-pointer hover:scale-110 transition-transform"
-            onClick={() => navigate("/courses")}
-          />
-
-          <h2 className="text-2xl font-semibold md:pl-[60px]">
-            Add detail information regarding the course
-          </h2>
-          <div className="space-x-2 space-y-2">
-            <button className="bg-black text-white px-4 py-2 rounded-md cursor-pointer hover:bg-gray-800 transition-colors" onClick={()=>navigate(`/createlecture/${selectCourse?._id}`)}>
-              Go to lecture page
-            </button>
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-[32px] font-extrabold text-[#111111] leading-tight tracking-tight">Edit Course</h1>
+            <p className="text-[15px] font-medium text-[#5F6368] mt-1">Configure your course details and settings.</p>
           </div>
+          <button 
+            onClick={() => navigate(`/createlecture/${selectCourse?._id}`)}
+            className="h-[44px] px-5 bg-white border border-[#E5E7EB] hover:bg-[#F8F9FA] text-[#111111] text-[14px] font-bold rounded-[6px] transition-all flex items-center gap-2 cursor-pointer shadow-sm shrink-0"
+          >
+            <PlayCircle className="w-4 h-4 text-[#FFD400]" /> Curriculum Editor
+          </button>
         </div>
 
-        {/* Form Details */}
-        <div className="bg-gray-50 p-6 rounded-md border border-gray-100">
-          <h2 className="text-lg font-medium mb-4">Basic Course information</h2>
-          <div className="space-x-2 space-y-2">
-            {!isPublished? <button className="bg-green-100 text-green-600 px-4 py-2 
-            rounded-md border hover:bg-green-200 transition-colors cursor-pointer" onClick={()=>setIsPublished(prev=>!prev)}>
-            Click to Publish
-            </button> : <button className="bg-red-100 text-red-600 px-4 py-2 
-            rounded-md border hover:bg-red-200 transition-colors cursor-pointer" onClick={()=>setIsPublished(prev=>!prev)}>
-            Click to UnPublish
-            </button> }
-            <button className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors cursor-pointer" disabled={loading1}
-          onClick={handleRemoveCourse}>{loading1? <ClipLoader color="white" size={20}/>: "Remove Course"}</button>
+        {/* Layout Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* ── Left Column: Basic Details ── */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-white border border-[#E5E7EB] rounded-[8px] p-8 shadow-sm">
+              <h2 className="text-[18px] font-bold text-[#111111] mb-6">Basic Information</h2>
+              
+              <div className="space-y-5">
+                {/* Title */}
+                <div>
+                  <label htmlFor="title" className="block text-[13px] font-bold text-[#111111] mb-2">Course Title</label>
+                  <input
+                    id="title" type="text"
+                    placeholder="e.g. Complete Web Development Bootcamp"
+                    value={title} onChange={(e) => setTitle(e.target.value)}
+                    className="w-full h-[46px] px-4 bg-white border border-[#E5E7EB] rounded-[6px] text-[14px] text-[#111111] placeholder-[#9CA3AF] focus:outline-none focus:border-[#FFD400] focus:ring-1 focus:ring-[#FFD400] transition-shadow"
+                  />
+                </div>
+
+                {/* Subtitle */}
+                <div>
+                  <label htmlFor="subtitle" className="block text-[13px] font-bold text-[#111111] mb-2">Subtitle</label>
+                  <input
+                    id="subtitle" type="text"
+                    placeholder="A brief summary of what this course offers"
+                    value={subTitle} onChange={(e) => setSubTitle(e.target.value)}
+                    className="w-full h-[46px] px-4 bg-white border border-[#E5E7EB] rounded-[6px] text-[14px] text-[#111111] placeholder-[#9CA3AF] focus:outline-none focus:border-[#FFD400] focus:ring-1 focus:ring-[#FFD400] transition-shadow"
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label htmlFor="description" className="block text-[13px] font-bold text-[#111111] mb-2">Description</label>
+                  <textarea
+                    id="description"
+                    placeholder="Provide a detailed description of the course content..."
+                    value={description} onChange={(e) => setDescription(e.target.value)}
+                    className="w-full h-[120px] p-4 bg-white border border-[#E5E7EB] rounded-[6px] text-[14px] text-[#111111] placeholder-[#9CA3AF] focus:outline-none focus:border-[#FFD400] focus:ring-1 focus:ring-[#FFD400] transition-shadow resize-none"
+                  />
+                </div>
+                
+                {/* 3-Col Grid for Meta */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                  {/* Category */}
+                  <div>
+                    <label htmlFor="category" className="block text-[13px] font-bold text-[#111111] mb-2">Category</label>
+                    <div className="relative">
+                      <select
+                        id="category" value={category} onChange={(e) => setCategory(e.target.value)}
+                        className="w-full h-[46px] px-4 appearance-none bg-white border border-[#E5E7EB] rounded-[6px] text-[14px] text-[#111111] focus:outline-none focus:border-[#FFD400] focus:ring-1 focus:ring-[#FFD400] transition-shadow"
+                      >
+                        <option value="" disabled>Select Category</option>
+                        <option value="App Development">App Development</option>
+                        <option value="AI/ML">AI/ML</option>
+                        <option value="AI Tools">AI Tools</option>
+                        <option value="Data Science">Data Science</option>
+                        <option value="Data Analytics">Data Analytics</option>
+                        <option value="Ethical Hacking">Ethical Hacking</option>
+                        <option value="UI UX Designing">UI UX Designing</option>
+                        <option value="Web Development">Web Development</option>
+                        <option value="Others">Others</option>
+                      </select>
+                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" />
+                    </div>
+                  </div>
+
+                  {/* Level */}
+                  <div>
+                    <label htmlFor="level" className="block text-[13px] font-bold text-[#111111] mb-2">Level</label>
+                    <div className="relative">
+                      <select
+                        id="level" value={level} onChange={(e) => setLevel(e.target.value)}
+                        className="w-full h-[46px] px-4 appearance-none bg-white border border-[#E5E7EB] rounded-[6px] text-[14px] text-[#111111] focus:outline-none focus:border-[#FFD400] focus:ring-1 focus:ring-[#FFD400] transition-shadow"
+                      >
+                        <option value="" disabled>Select Level</option>
+                        <option value="Beginner">Beginner</option>
+                        <option value="Intermediate">Intermediate</option>
+                        <option value="Advanced">Advanced</option>
+                      </select>
+                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" />
+                    </div>
+                  </div>
+
+                  {/* Price */}
+                  <div>
+                    <label htmlFor="price" className="block text-[13px] font-bold text-[#111111] mb-2">Price (INR)</label>
+                    <div className="relative flex items-center h-[46px] bg-white border border-[#E5E7EB] rounded-[6px] px-4 focus-within:border-[#FFD400] focus-within:ring-1 focus-within:ring-[#FFD400] transition-shadow">
+                      <span className="text-[#9CA3AF] font-bold mr-2">₹</span>
+                      <input
+                        id="price" type="number"
+                        placeholder="0"
+                        value={price} onChange={(e) => setPrice(e.target.value)}
+                        className="w-full h-full bg-transparent text-[14px] text-[#111111] placeholder-[#9CA3AF] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
           </div>
 
-          <form className="space-y-6 mt-6" onSubmit={(e)=>e.preventDefault()}>
-           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-            <input id="title" type="text" className="w-full border 
-            px-4 py-2 rounded-md focus:ring-2 focus:ring-black focus:outline-none" placeholder="CourseTitle" onChange={(e)=>setTitle(e.target.value)} value={title}/>
-           </div>
-           <div>
-            <label htmlFor="subtitle" className="block text-sm font-medium text-gray-700 mb-1">Subtitle</label>
-            <input id="subtitle" type="text" className="w-full border 
-            px-4 py-2 rounded-md focus:ring-2 focus:ring-black focus:outline-none" placeholder="CourseSubtitle" onChange={(e)=>setSubTitle(e.target.value)} value={subTitle}/> 
-           </div>
-           <div>
-            <label htmlFor="des" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea id="des" type="text" className="w-full border 
-            px-4 py-2 rounded-md h-24 resize-none focus:ring-2 focus:ring-black focus:outline-none" placeholder="Course Description" 
-            onChange={(e)=>setDescription(e.target.value)} value={description}></textarea>
-           </div>
-           <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
-            {/* For Category */}
-            <div className="flex-1"> 
-            <label htmlFor="" className="block text-sm font-medium text-gray-700 mb-1">Course Category</label>
-            <select name="" id="" className="w-full border px-4 py-2 rounded-md bg-white focus:ring-2 focus:ring-black focus:outline-none" 
-            onChange={(e)=>setCategory(e.target.value)} value={category}>
-                <option value="">Select Category</option>
-                <option value="App Development">App Development</option>
-                <option value="AI/ML">AI/ML</option>
-                <option value="AI Tools">AI Tools</option>
-                <option value="Data Science">Data Science</option>
-                <option value="Data Analytics">Data Analytics</option>
-                <option value="Ethical Hacking">Ethical Hacking</option>
-                <option value="UI UX Designing">UI UX Designing</option>
-                <option value="Web Development">Web Development</option>
-                <option value="others">Others</option>
-            </select>
+          {/* ── Right Column: Settings & Media ── */}
+          <div className="lg:col-span-1 space-y-6">
+            
+            {/* Status Card */}
+            <div className="bg-white border border-[#E5E7EB] rounded-[8px] p-6 shadow-sm">
+              <h2 className="text-[16px] font-bold text-[#111111] mb-4">Course Status</h2>
+              <div className="p-4 rounded-[6px] bg-[#F8F9FA] border border-[#E5E7EB] mb-4 flex items-center justify-between">
+                <div>
+                  <p className="text-[13px] font-bold text-[#111111]">Current State</p>
+                  {isPublished ? (
+                    <span className="inline-flex items-center gap-1 mt-1 text-[12px] font-bold text-[#22C55E]">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Published
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 mt-1 text-[12px] font-bold text-[#5F6368]">
+                      <Clock className="w-3.5 h-3.5" /> Draft
+                    </span>
+                  )}
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsPublished(!isPublished)}
+                className={`w-full h-[40px] text-[13px] font-bold rounded-[6px] transition-all cursor-pointer ${
+                  isPublished 
+                    ? "bg-white border border-[#E5E7EB] text-[#111111] hover:bg-[#F8F9FA]" 
+                    : "bg-[#111111] text-white hover:bg-[#222222]"
+                }`}
+              >
+                {isPublished ? "Unpublish Course" : "Publish Course"}
+              </button>
             </div>
-            {/* For Level */}
-            <div className="flex-1"> 
-            <label htmlFor="" className="block text-sm font-medium text-gray-700 mb-1">Course Level</label>
-            <select name="" id="" className="w-full border px-4 py-2 rounded-md bg-white focus:ring-2 focus:ring-black focus:outline-none" 
-            onChange={(e)=>setLevel(e.target.value)} value={level}>
-                <option value="">Select Level</option>
-                <option value="Beginner">Beginner</option>
-                <option value="Intermediate">Intermediate</option>
-                <option value="Advanced">Advanced</option>
-            </select>
-            </div>
-            {/* For Price */}
-             <div className="flex-1"> 
-            <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">Course Price (INR)</label>
-            <input type="number" name="" id="price"
-              className="w-full border px-4 py-2 rounded-md focus:ring-2 focus:ring-black focus:outline-none" placeholder="₹" 
-              onChange={(e)=>setPrice(e.target.value)} value={price}
-            />
-            </div>
-           </div>
-           <div>
-              <label htmlFor="" className="block text-sm font-medium text-gray-700 mb-1">
-              Course Thumbnail</label>
+
+            {/* Thumbnail Card */}
+            <div className="bg-white border border-[#E5E7EB] rounded-[8px] p-6 shadow-sm">
+              <h2 className="text-[16px] font-bold text-[#111111] mb-4">Thumbnail</h2>
               <input type="file" hidden ref={thumb} accept="image/*" onChange={handleThumbnail}/>
-            </div> 
-           <div className="relative w-[300px] h-[170px] group">
-             <img src={frontendImage} alt="" className="w-full h-full border border-black rounded-[5px] object-cover" 
-             onClick={()=>thumb.current.click()}/>
-             <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors rounded-[5px] pointer-events-none"></div>
-             <FaEdit className="w-[20px] h-[20px] absolute top-2 right-2 cursor-pointer text-white drop-shadow-md hover:scale-110 transition-transform" onClick={()=>thumb.current.click()}/>
+              
+              <div 
+                onClick={() => thumb.current.click()}
+                className="w-full aspect-video bg-[#F8F9FA] border-2 border-dashed border-[#E5E7EB] rounded-[6px] overflow-hidden group cursor-pointer relative flex items-center justify-center hover:border-[#FFD400] hover:bg-[#FFD400]/5 transition-colors"
+              >
+                {frontendImage && frontendImage !== img ? (
+                  <>
+                    <img src={frontendImage} className="w-full h-full object-cover" alt="Thumbnail" />
+                    <div className="absolute inset-0 bg-[#111111]/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white">
+                      <Upload className="w-6 h-6 mb-2" />
+                      <span className="text-[13px] font-bold">Replace Image</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center text-[#9CA3AF] group-hover:text-[#FFD400] transition-colors">
+                    <ImageIcon className="w-8 h-8 mb-2" />
+                    <span className="text-[13px] font-bold text-[#5F6368]">Upload Thumbnail</span>
+                    <span className="text-[11px] font-medium mt-1">16:9 ratio recommended</span>
+                  </div>
+                )}
+              </div>
             </div>
-           <div className="flex items-center justify-start gap-[15px] pt-4">
-            <button className="bg-[#e9e8e8] hover:bg-red-200 text-black border
-              border-black cursor-pointer px-4 py-2 rounded-md transition-colors" onClick={()=>navigate("/courses")}>Cancel</button>
-            <button className="bg-black text-white px-7 py-2 rounded-md hover:bg-gray-800 
-            cursor-pointer transition-colors" disabled={loading} onClick={handleEditCourse}>{loading? <ClipLoader size={30} color="white"/> : "Save"}
-            </button>
-           </div>
-          </form>
+
+            {/* Danger Zone */}
+            <div className="bg-white border border-red-200 rounded-[8px] p-6 shadow-sm">
+              <h2 className="text-[16px] font-bold text-red-600 mb-1 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" /> Danger Zone
+              </h2>
+              <p className="text-[12px] font-medium text-[#5F6368] mb-4">
+                Permanently delete this course and all associated data.
+              </p>
+              <button 
+                onClick={handleRemoveCourse} disabled={loading1}
+                className="w-full h-[40px] bg-red-50 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white text-[13px] font-bold rounded-[6px] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
+              >
+                {loading1 ? <ClipLoader size={16} color="currentColor" /> : <><Trash2 className="w-4 h-4" /> Delete Course</>}
+              </button>
+            </div>
+            
+          </div>
         </div>
+      </main>
+
+      {/* ── Fixed Bottom Footer (Save Actions) ── */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E5E7EB] px-6 lg:px-10 py-4 z-40 flex items-center justify-end gap-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <button 
+          onClick={() => navigate("/courses")}
+          className="h-[44px] px-6 bg-white border border-[#E5E7EB] hover:bg-[#F8F9FA] text-[#111111] text-[14px] font-bold rounded-[6px] transition-colors cursor-pointer"
+        >
+          Cancel
+        </button>
+        <button 
+          onClick={handleEditCourse} disabled={loading}
+          className="h-[44px] px-8 bg-[#FFD400] hover:bg-[#e6be00] text-[#111111] text-[14px] font-bold rounded-[6px] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm disabled:opacity-75"
+        >
+          {loading ? <ClipLoader size={18} color="#111111" /> : "Save Changes"}
+        </button>
       </div>
+
     </div>
   );
 }
-
-export default EditCourse;
