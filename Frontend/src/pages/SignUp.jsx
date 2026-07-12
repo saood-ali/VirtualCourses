@@ -77,12 +77,8 @@ function SignUp() {
         <div className="hidden lg:flex w-1/2 bg-[#F3F4F6] border-r border-[#E5E7EB] p-12 flex-col justify-between items-center text-center">
           
           {/* Brand Logo Header */}
-          <div className="flex flex-col items-center mt-6">
-            <div className="w-14 h-14 rounded-full border border-[#E5E7EB] bg-white flex items-center justify-center shadow-sm">
-              <span className="text-xl font-bold text-[#111111]">V</span>
-              <span className="text-xl font-bold text-[#FFD400]">C</span>
-            </div>
-            <h2 className="text-xl font-bold text-[#111111] mt-3.5">VirtualCourses</h2>
+          <div className="flex flex-col items-center mt-6 cursor-pointer" onClick={() => navigate("/")}>
+            <img src="/logo.svg" alt="VirtualCourses" className="h-12 w-auto mb-2" />
             <p className="text-xs text-[#5F6368] mt-1 font-medium">AI Powered Learning Marketplace</p>
           </div>
 
