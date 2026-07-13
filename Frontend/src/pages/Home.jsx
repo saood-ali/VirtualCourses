@@ -6,7 +6,7 @@ import {
   Headphones, Users, Monitor, Palette, Smartphone, ShieldCheck, 
   Brain, Database, BarChart3, Wrench, Star, CheckCircle2, Play,
   BookOpen, ChevronRight, ChevronLeft, CircleCheck, PlayCircle,
-  Tag, BarChart2
+  Tag, BarChart2, Quote
 } from "lucide-react";
 
 import ai_student from "../assets/ai_student.png";
@@ -25,11 +25,11 @@ const CATEGORIES = [
 ];
 
 const TRUST_ITEMS = [
-  { icon: GraduationCap, label: "20k+ Online Courses" },
-  { icon: Infinity, label: "Lifetime Access" },
-  { icon: BadgeDollarSign, label: "Value for Money" },
-  { icon: Headphones, label: "Lifetime Support" },
-  { icon: Users, label: "Community Support" },
+  { icon: Brain, label: "AI-Powered Search" },
+  { icon: Monitor, label: "Live Interactive Classes" },
+  { icon: Infinity, label: "Lifetime Course Access" },
+  { icon: GraduationCap, label: "Become an Educator" },
+  { icon: ShieldCheck, label: "Secure Payments" },
 ];
 
 const FEATURES = [
@@ -272,7 +272,7 @@ function Home() {
             <div className="text-center mt-12">
               <button
                 onClick={() => navigate("/allcourses")}
-                className="h-[48px] px-8 bg-white border border-[#E5E7EB] hover:border-[#111111] text-[#111111] text-[14px] font-bold rounded-[8px] transition-all flex items-center gap-2 cursor-pointer mx-auto"
+                className="h-[48px] px-8 bg-white border border-[#E5E7EB] text-[#111111] text-[14px] font-bold rounded-[8px] flex items-center gap-2 cursor-pointer mx-auto hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:border-[#FFD400] transition-all duration-300"
               >
                 View All Courses <ChevronRight className="w-4 h-4" />
               </button>
@@ -370,7 +370,7 @@ function Home() {
               </button>
 
               {/* Cards */}
-              <div className="flex gap-6 justify-center overflow-hidden px-4">
+              <div className="flex gap-6 justify-center overflow-hidden px-4 py-8">
                 {(() => {
                   const items = latestReviews.length > 0 ? latestReviews : TESTIMONIALS;
                   const totalItems = items.length;
@@ -391,14 +391,15 @@ function Home() {
                     return (
                       <div
                         key={itemIndex}
-                        className={`w-[320px] lg:w-[360px] shrink-0 rounded-3xl border bg-white p-8 transition-all duration-300
+                        className={`w-[320px] lg:w-[360px] shrink-0 rounded-3xl border bg-white p-8 transition-all duration-300 relative overflow-hidden
                           ${isCenter
-                            ? "border-[#FFD400]/40 shadow-xl -translate-y-1 scale-100"
-                            : "border-[#EAEAEA] shadow-sm opacity-60 scale-[0.96] hidden lg:block"
+                            ? "border-gray-200 shadow-xl -translate-y-2 scale-100"
+                            : "border-gray-100 shadow-sm opacity-50 scale-[0.95] hidden lg:block"
                           }`}
                       >
+                        <Quote className="absolute top-8 right-8 w-10 h-10 text-[#FFD400]/10 fill-[#FFD400]/10 rotate-180" />
                         {/* Stars */}
-                        <div className="flex gap-1 mb-5">
+                        <div className="flex gap-1 mb-5 relative z-10">
                           {Array(5).fill(0).map((_, i) => (
                             <Star
                               key={i}
@@ -412,19 +413,46 @@ function Home() {
                           {comment}
                         </p>
 
-                        {/* Author */}
-                        <div className="flex items-center gap-4 pt-5 border-t border-[#EAEAEA]">
-                          <div className="w-12 h-12 rounded-full bg-[#FFF8DD] border border-[#EAEAEA] overflow-hidden shrink-0 flex items-center justify-center">
-                            {item.user?.photoUrl ? (
-                              <img src={item.user.photoUrl} alt={name} className="w-full h-full object-cover" />
-                            ) : (
-                              <span className="text-[14px] font-bold text-[#D4A100]">{initials}</span>
-                            )}
+                        {/* Footer Section (Author & Course) */}
+                        <div className="flex items-center justify-between pt-5 border-t border-[#EAEAEA]">
+                          
+                          {/* Author Info (Left) */}
+                          <div className="flex items-center gap-3 shrink min-w-0">
+                            <div className="w-10 h-10 rounded-full bg-[#FFF8DD] border border-[#EAEAEA] overflow-hidden shrink-0 flex items-center justify-center">
+                              {item.user?.photoUrl ? (
+                                <img src={item.user.photoUrl} alt={name} className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="text-[13px] font-bold text-[#D4A100]">{initials}</span>
+                              )}
+                            </div>
+                            <div className="min-w-0 pr-2">
+                              <p className="text-[14px] font-bold text-[#1A1A1A] truncate">{name}</p>
+                              <p className="text-[12px] text-[#666666] font-medium truncate">{role}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-[14px] font-bold text-[#1A1A1A]">{name}</p>
-                            <p className="text-[12px] text-[#666666] font-medium">{role}</p>
-                          </div>
+
+                          {/* Course Link (Right) */}
+                          {item.course && (
+                            <div 
+                              className="flex items-center gap-2 shrink-0 p-1 pr-3 rounded-full border border-[#EAEAEA] bg-[#F8F9FA] cursor-pointer hover:border-[#FFD400] hover:bg-[#FFF8DD] hover:shadow-sm transition-all group max-w-[140px]"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/course/${item.course._id}`);
+                              }}
+                              title={item.course.title}
+                            >
+                              <div className="w-8 h-8 shrink-0 rounded-full overflow-hidden bg-white border border-[#EAEAEA]">
+                                <img 
+                                  src={item.course.thumbnail || import.meta.env.VITE_DEFAULT_COURSE_THUMBNAIL} 
+                                  alt={item.course.title} 
+                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" 
+                                />
+                              </div>
+                              <p className="text-[11px] font-bold text-[#1A1A1A] truncate group-hover:text-[#D4A100] transition-colors">
+                                {item.course.title}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -442,21 +470,7 @@ function Home() {
               </button>
             </div>
 
-            {/* Pagination Dots */}
-            <div className="flex items-center justify-center gap-2 mt-10 relative z-10">
-              {(latestReviews.length > 0 ? latestReviews : TESTIMONIALS).map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setActiveSlide(i)}
-                  className={`rounded-full transition-all duration-300 cursor-pointer ${
-                    i === activeSlide
-                      ? "w-6 h-2.5 bg-[#FFD400]"
-                      : "w-2.5 h-2.5 bg-[#EAEAEA] hover:bg-[#FFD400]/50"
-                  }`}
-                  aria-label={`Go to slide ${i + 1}`}
-                />
-              ))}
-            </div>
+
           </div>
         </div>
       </section>

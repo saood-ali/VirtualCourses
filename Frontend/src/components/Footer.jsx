@@ -76,7 +76,7 @@ export default function Footer() {
         <div className="pt-8 border-t border-[#E5E7EB] flex flex-col sm:flex-row items-center justify-between gap-4 text-[13px] font-medium text-[#9CA3AF]">
           <p>© {new Date().getFullYear()} VirtualCourses. All rights reserved.</p>
           <div className="flex items-center gap-1.5">
-            Designed with <span className="text-[#FFD400]">♥</span> for Educators
+            Designed with <span className="text-[#FFD400]">♥</span> for Educators & Learners
           </div>
         </div>
 

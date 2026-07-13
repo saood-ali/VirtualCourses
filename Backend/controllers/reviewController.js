@@ -40,7 +40,7 @@ export const getReviews = async (req, res) => {
     try {
         const reviews = await Review.find({})
             .populate("user")
-            .populate("course", "title")
+            .populate("course", "title thumbnail")
             .sort({ createdAt: -1 });
 
         const validReviews = reviews.filter(review => review.course !== null);
