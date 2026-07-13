@@ -151,9 +151,10 @@ export default function CreateLecture() {
                     
                     <button 
                       onClick={() => navigate(`/editlecture/${courseId}/${lecture._id}`)}
-                      className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-[6px] border border-[#E5E7EB] bg-white text-[#5F6368] hover:text-[#111111] hover:border-[#111111] transition-all cursor-pointer shadow-sm sm:opacity-0 sm:group-hover:opacity-100"
+                      className="inline-flex items-center justify-center w-9 h-9 rounded-[6px] border border-[#E5E7EB] bg-white text-[#9CA3AF] hover:text-[#111111] hover:border-[#111111] hover:bg-[#F8F9FA] transition-all cursor-pointer shadow-sm"
+                      title="Edit Lecture"
                     >
-                      <Edit3 className="w-4 h-4" /> <span className="text-[13px] font-bold">Edit Details</span>
+                      <Edit3 className="w-4 h-4" />
                     </button>
                   </div>
                 ))

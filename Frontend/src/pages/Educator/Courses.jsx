@@ -26,6 +26,7 @@ export default function Courses() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   
   useEffect(() => {
@@ -257,7 +258,7 @@ export default function Courses() {
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-[#111111]/40 backdrop-blur-sm transition-opacity">
           
-          <div className="bg-white w-full max-w-[600px] border border-[#E5E7EB] rounded-[8px] shadow-2xl overflow-hidden relative animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white w-full max-w-[600px] border border-[#E5E7EB] rounded-[8px] shadow-2xl overflow-visible relative animate-in fade-in zoom-in-95 duration-200">
             
             {/* Modal Close Button */}
             <button 
@@ -303,31 +304,46 @@ export default function Courses() {
                 </div>
                 
                 {/* Category Dropdown */}
-                <div className="space-y-1.5 pb-2">
+                <div className="space-y-1.5 pb-2 relative">
                   <label htmlFor="category" className="block text-xs font-semibold text-[#111111]">
                     Course Category
                   </label>
-                  <div className="relative flex items-center h-[50px] bg-white border border-[#E5E7EB] rounded-[6px] px-3.5 focus-within:border-[#FFD400] focus-within:ring-1 focus-within:ring-[#FFD400] transition-shadow">
+                  <div 
+                    className={`relative flex items-center h-[50px] bg-white border rounded-[6px] px-3.5 transition-shadow cursor-pointer ${showCategoryDropdown ? 'border-[#FFD400] ring-1 ring-[#FFD400]' : 'border-[#E5E7EB] hover:border-[#FFD400]/50'}`}
+                    onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                  >
                     <LayoutList className="w-4.5 h-4.5 text-[#9CA3AF] mr-2.5 shrink-0" />
-                    <select
-                      id="category"
-                      value={category}
-                      onChange={(e) => setCategory(e.target.value)}
-                      className="w-full h-full bg-transparent text-[13px] text-[#111111] focus:outline-none appearance-none cursor-pointer"
-                    >
-                      <option value="" disabled className="text-[#9CA3AF]">Select Category</option>
-                      <option value="App Development">App Development</option>
-                      <option value="AI/ML">AI/ML</option>
-                      <option value="AI Tools">AI Tools</option>
-                      <option value="Data Science">Data Science</option>
-                      <option value="Data Analytics">Data Analytics</option>
-                      <option value="Ethical Hacking">Ethical Hacking</option>
-                      <option value="UI UX Designing">UI UX Designing</option>
-                      <option value="Web Development">Web Development</option>
-                      <option value="Others">Others</option>
-                    </select>
-                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" />
+                    <div className="w-full text-[13px] text-[#111111] select-none flex items-center justify-between">
+                      {category ? category : <span className="text-[#9CA3AF]">Select Category</span>}
+                      <ChevronDown className={`w-4 h-4 text-[#9CA3AF] transition-transform ${showCategoryDropdown ? 'rotate-180' : ''}`} />
+                    </div>
                   </div>
+                  
+                  {/* Custom Dropdown Menu */}
+                  {showCategoryDropdown && (
+                    <div className="absolute top-[72px] left-0 right-0 bg-white border border-[#E5E7EB] rounded-[8px] shadow-lg z-[100] overflow-hidden py-1 max-h-[220px] overflow-y-auto">
+                      {[
+                        "App Development", "AI/ML", "AI Tools", "Data Science", 
+                        "Data Analytics", "Ethical Hacking", "UI/UX Designing", 
+                        "Web Development", "Others"
+                      ].map((cat) => (
+                        <div
+                          key={cat}
+                          onClick={() => {
+                            setCategory(cat);
+                            setShowCategoryDropdown(false);
+                          }}
+                          className={`px-4 py-2.5 text-[13px] cursor-pointer transition-colors ${
+                            category === cat 
+                              ? 'bg-[#FFD400]/10 text-[#D4A100] font-bold' 
+                              : 'text-[#111111] hover:bg-[#F8F9FA] hover:text-[#D4A100]'
+                          }`}
+                        >
+                          {cat}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Submit Button */}

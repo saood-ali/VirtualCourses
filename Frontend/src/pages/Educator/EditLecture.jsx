@@ -252,12 +252,12 @@ export default function EditLecture() {
             <div className="bg-white border border-[#E5E7EB] rounded-[8px] p-6 shadow-sm">
               <h2 className="text-[16px] font-bold text-[#111111] mb-4">Settings</h2>
               
-              <label className="flex items-center gap-3 p-4 rounded-[6px] border border-[#E5E7EB] cursor-pointer hover:bg-[#F8F9FA] transition-colors">
+              <label className="flex items-start gap-3 p-4 rounded-[6px] border border-[#E5E7EB] cursor-pointer hover:bg-[#F8F9FA] transition-colors">
                 <input
                   type="checkbox"
                   checked={isPreviewFree}
                   onChange={() => setIsPreviewFree(!isPreviewFree)}
-                  className="w-4 h-4 text-[#FFD400] bg-white border-[#E5E7EB] rounded focus:ring-[#FFD400] focus:ring-2 cursor-pointer"
+                  className="w-4 h-4 mt-0.5 text-[#FFD400] bg-white border-[#E5E7EB] rounded focus:ring-[#FFD400] focus:ring-2 cursor-pointer"
                 />
                 <div className="flex flex-col">
                   <span className="text-[13px] font-bold text-[#111111] flex items-center gap-1.5">
