@@ -78,6 +78,8 @@
   color: #9CA3AF !important;
   opacity: 1 !important;
   align-self: flex-start !important;
+  transform: scale(0.75) !important;
+  margin-top: 2px !important;
 }
 .Toastify__close-button:hover { color: #111111 !important; }
 

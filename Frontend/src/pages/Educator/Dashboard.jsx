@@ -88,9 +88,6 @@ export default function Dashboard() {
             </div>
             <div className="flex items-end gap-3">
               <h2 className="text-[32px] font-extrabold text-[#111111] leading-none">₹{totalEarning.toLocaleString()}</h2>
-              <span className="flex items-center text-[12px] font-bold text-[#22C55E] mb-1">
-                <TrendingUp className="w-3 h-3 mr-0.5" /> +12%
-              </span>
             </div>
           </div>
 
