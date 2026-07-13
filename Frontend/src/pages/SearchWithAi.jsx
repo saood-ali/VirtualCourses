@@ -291,13 +291,11 @@ function SearchWithAi() {
                 >
                   {/* Thumbnail */}
                   <div className="h-[160px] w-full overflow-hidden bg-[#F8F9FA] shrink-0">
-                    {course.thumbnail ? (
-                      <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[#9CA3AF]">
-                        <BookOpen className="w-8 h-8" />
-                      </div>
-                    )}
+                    <img 
+                      src={course.thumbnail || import.meta.env.VITE_DEFAULT_COURSE_THUMBNAIL} 
+                      alt={course.title} 
+                      className="w-full h-full object-cover" 
+                    />
                   </div>
                   {/* Body */}
                   <div className="p-4 flex flex-col gap-2 flex-1">

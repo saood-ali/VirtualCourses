@@ -22,7 +22,8 @@ const courseSchema = new mongoose.Schema({
         type:Number
     },
     thumbnail:{
-        type:String
+        type:String,
+        default: () => process.env.DEFAULT_COURSE_THUMBNAIL || "https://res.cloudinary.com/df5jasvzx/image/upload/default-thumbnail_uhf9kp.png"
     },
     enrolledStudents:[{
         type:mongoose.Schema.Types.ObjectId,

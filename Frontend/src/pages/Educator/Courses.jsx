@@ -151,11 +151,7 @@ export default function Courses() {
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-4">
                         <div className="w-24 h-16 shrink-0 rounded-[6px] overflow-hidden bg-[#F8F9FA] border border-[#E5E7EB] flex items-center justify-center">
-                          {course?.thumbnail ? (
-                            <img src={course.thumbnail} className="w-full h-full object-cover" alt="" />
-                          ) : (
-                            <ImageIcon className="w-6 h-6 text-[#9CA3AF]" />
-                          )}
+                          <img src={course?.thumbnail || import.meta.env.VITE_DEFAULT_COURSE_THUMBNAIL} className="w-full h-full object-cover" alt="" />
                         </div>
                         <div className="flex flex-col">
                           <span className="text-[14px] font-bold text-[#111111] line-clamp-1">{course?.title || "Untitled Course"}</span>
@@ -216,11 +212,7 @@ export default function Courses() {
               <div key={index} className="bg-white border border-[#E5E7EB] rounded-[8px] p-4 shadow-sm flex flex-col gap-4">
                 <div className="flex gap-4 items-start">
                   <div className="w-20 h-16 shrink-0 rounded-[6px] overflow-hidden bg-[#F8F9FA] border border-[#E5E7EB] flex items-center justify-center">
-                    {course?.thumbnail ? (
-                      <img src={course.thumbnail} className="w-full h-full object-cover" alt="" />
-                    ) : (
-                      <ImageIcon className="w-5 h-5 text-[#9CA3AF]" />
-                    )}
+                    <img src={course?.thumbnail || import.meta.env.VITE_DEFAULT_COURSE_THUMBNAIL} className="w-full h-full object-cover" alt="" />
                   </div>
                   <div className="flex flex-col flex-1">
                     <span className="text-[14px] font-bold text-[#111111] line-clamp-2">{course?.title || "Untitled Course"}</span>

@@ -222,7 +222,7 @@ export default function ViewCourse() {
           <div className="w-full lg:w-[40%] shrink-0">
             <div className="rounded-[8px] overflow-hidden border border-[#E5E7EB] bg-[#F8F9FA] aspect-video relative group cursor-pointer shadow-sm">
               <img
-                src={selectedCourse?.thumbnail || img}
+                src={selectedCourse?.thumbnail || import.meta.env.VITE_DEFAULT_COURSE_THUMBNAIL || img}
                 alt={selectedCourse?.title}
                 className="w-full h-full object-cover"
               />

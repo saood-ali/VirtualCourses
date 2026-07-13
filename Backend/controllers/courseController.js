@@ -92,9 +92,10 @@ export const editCourse = async (req, res) => {
         });
     }
 
-        let thumbnail = course.thumbnail;
+        let thumbnail = course.thumbnail || process.env.DEFAULT_COURSE_THUMBNAIL || "https://res.cloudinary.com/df5jasvzx/image/upload/default-thumbnail_uhf9kp.png";
+        
         if (req.file) {
-            if (course.thumbnail) {
+            if (course.thumbnail && course.thumbnail !== process.env.DEFAULT_COURSE_THUMBNAIL && !course.thumbnail.includes("default-thumbnail")) {
                 const publicId = getPublicIdFromUrl(course.thumbnail);
                 if (publicId) {
                     await cloudinary.uploader.destroy(publicId);

@@ -55,7 +55,7 @@ export default function EditCourse() {
     setCategory(courseData.category || "");
     setLevel(courseData.level || "");
     setPrice(courseData.price || "");
-    setFrontendImage(courseData.thumbnail || img);
+    setFrontendImage(courseData.thumbnail || import.meta.env.VITE_DEFAULT_COURSE_THUMBNAIL || img);
     setIsPublished(courseData.isPublished ?? false);
   };
 
