@@ -66,7 +66,7 @@ function Login() {
   return (
     <div className="min-h-screen bg-white text-[#111111] flex items-center justify-center font-sans antialiased p-4">
       {/* Central Auth Container */}
-      <div className="max-w-[1280px] w-full md:w-[90%] h-auto lg:h-[770px] bg-white border border-[#E5E7EB] rounded-lg shadow-[0_1px_3px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col lg:flex-row">
+      <div className="max-w-[1024px] w-full md:w-[90%] h-auto lg:min-h-[650px] bg-white border border-[#E5E7EB] rounded-lg shadow-[0_1px_3px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col lg:flex-row">
         
         {/* Left Side: Brand Panel (Hidden on Mobile) */}
         <div className="hidden lg:flex w-1/2 bg-[#F3F4F6] border-r border-[#E5E7EB] p-12 flex-col justify-between items-center text-center">
@@ -125,7 +125,7 @@ function Login() {
         </div>
 
         {/* Right Side: Authentication Form */}
-        <div className="relative w-full lg:w-1/2 p-6 sm:p-10 lg:py-8 lg:px-12 flex flex-col justify-between">
+        <div className="relative w-full lg:w-1/2 p-6 sm:p-8 lg:py-8 lg:px-10 flex flex-col justify-between">
           
           {/* Close button top right */}
           <button 

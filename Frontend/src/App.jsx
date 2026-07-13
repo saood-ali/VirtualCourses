@@ -9,7 +9,7 @@ import { ToastContainer } from 'react-toastify';
 import useGetCurrentUser from './customHooks/getCurrentUser.js';
 import { useSelector } from 'react-redux'
 import Profile from './pages/Profile.jsx'
-import ForgetPassword from './pages/ForgetPassword.jsx'
+import ForgotPassword from './pages/ForgotPassword.jsx'
 import EditProfile from './pages/EditProfile.jsx'
 import Dashboard from './pages/Educator/Dashboard.jsx'
 import Courses from './pages/Educator/Courses.jsx'
@@ -64,7 +64,7 @@ function App() {
         <Route path='/signup' element={!userData? <SignUp/> : <Navigate to={"/"}/>} />
         <Route path='/login' element={<Login/>} />
         <Route path='/profile' element={userData? <Profile/> : <Navigate to={"/signup"}/>} />
-        <Route path='/forget-password' element={userData? <ForgetPassword/> : <Navigate to={"/signup"}/>} />
+        <Route path='/forget-password' element={!userData? <ForgotPassword/> : <Navigate to={"/"}/>} />
         <Route path='/edit-profile' element={userData? <EditProfile/> : <Navigate to={"/signup"}/>} />
         <Route path='/allcourses' element={<AllCourses/>} />
         <Route path='/dashboard' element={userData?.role === "educator"? <Dashboard/> : <Navigate to={"/signup"}/>} />
