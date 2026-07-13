@@ -9,6 +9,18 @@ import {
 import axiosClient from "../config/axiosClient.js";
 import { setUserData } from "../redux/userSlice.js";
 
+const CATEGORIES = [
+  "App Development",
+  "AI/ML",
+  "AI Tools",
+  "Data Science",
+  "Data Analytics",
+  "Ethical Hacking",
+  "UI/UX Designing",
+  "Web Development",
+  "Others",
+];
+
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -78,9 +90,25 @@ export default function Navbar() {
         <span onClick={() => navigate("/")} className={navItemClass("/")}>
           Home
         </span>
-        <span onClick={() => navigate("/allcourses")} className={navItemClass("/allcourses")}>
-          Explore Courses
-        </span>
+        {/* Explore Courses with Dropdown */}
+        <div className="relative group h-full flex items-center">
+          <span onClick={() => navigate("/allcourses")} className={`${navItemClass("/allcourses")} flex items-center gap-1`}>
+            Explore Courses <ChevronDown className="w-3.5 h-3.5 mt-0.5 text-inherit transition-transform duration-200 group-hover:rotate-180" />
+          </span>
+          
+          {/* Dropdown Menu */}
+          <div className="absolute top-full left-0 w-[240px] bg-white border border-[#E5E7EB] rounded-b-[8px] shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 flex flex-col py-2 translate-y-1 group-hover:translate-y-0">
+            {CATEGORIES.map((cat, idx) => (
+              <div 
+                key={idx}
+                onClick={() => navigate(`/allcourses?category=${encodeURIComponent(cat)}`)}
+                className="px-5 py-2.5 text-[14px] font-medium text-[#5F6368] hover:text-[#111111] hover:bg-[#F8F9FA] hover:pl-6 cursor-pointer transition-all flex items-center justify-between group/item"
+              >
+                {cat}
+              </div>
+            ))}
+          </div>
+        </div>
         
         {userData && (
           <span onClick={() => navigate("/mycourses")} className={navItemClass("/mycourses")}>
