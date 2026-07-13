@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { ArrowLeft, Sparkles, BookOpen, Tag, X, SlidersHorizontal, BarChart2, Check } from "lucide-react";
 
@@ -18,7 +18,11 @@ const CATEGORIES = [
 function AllCourses() {
   const navigate = useNavigate();
   const { courseData } = useSelector((state) => state.course);
-  const [category, setCategory] = useState([]);
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const initialCategory = queryParams.get("category");
+
+  const [category, setCategory] = useState(initialCategory ? [initialCategory] : []);
   const [showFilters, setShowFilters] = useState(false);
 
   const toggleCategory = (cat) => {

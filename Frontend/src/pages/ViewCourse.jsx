@@ -205,7 +205,7 @@ export default function ViewCourse() {
         <div className="flex items-center gap-2 text-[13px] font-medium text-[#9CA3AF]">
           <span onClick={() => navigate("/")} className="cursor-pointer hover:text-[#111111] transition-colors">Home</span>
           <span className="text-[#E5E7EB]">›</span>
-          <span onClick={() => navigate("/allcourses")} className="cursor-pointer hover:text-[#111111] transition-colors">{selectedCourse?.category || "Category"}</span>
+          <span onClick={() => navigate(`/allcourses?category=${encodeURIComponent(selectedCourse.category)}`)} className="cursor-pointer hover:text-[#111111] transition-colors">{selectedCourse?.category || "Category"}</span>
           <span className="text-[#E5E7EB]">›</span>
           <span className="text-[#111111] font-semibold">{selectedCourse?.title || "Course"}</span>
         </div>
@@ -220,17 +220,12 @@ export default function ViewCourse() {
           
           {/* Col 1: Thumbnail (40%) */}
           <div className="w-full lg:w-[40%] shrink-0">
-            <div className="rounded-[8px] overflow-hidden border border-[#E5E7EB] bg-[#F8F9FA] aspect-video relative group cursor-pointer shadow-sm">
+            <div className="rounded-[8px] overflow-hidden border border-[#E5E7EB] bg-[#F8F9FA] aspect-video relative group shadow-sm">
               <img
                 src={selectedCourse?.thumbnail || import.meta.env.VITE_DEFAULT_COURSE_THUMBNAIL || img}
                 alt={selectedCourse?.title}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-black/20 flex items-center justify-center group-hover:bg-black/30 transition-all">
-                <div className="w-16 h-16 bg-white text-[#111111] rounded-full flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                  <Play className="w-6 h-6 ml-1" fill="currentColor" />
-                </div>
-              </div>
             </div>
           </div>
 
@@ -265,7 +260,7 @@ export default function ViewCourse() {
             {/* Metadata Chips */}
             <div className="flex flex-wrap gap-2.5 mb-5">
               {selectedCourse?.category && (
-                <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#111111] bg-white border border-[#E5E7EB] rounded-[6px] px-3 py-1.5 shadow-sm">
+                <span onClick={() => navigate(`/allcourses?category=${encodeURIComponent(selectedCourse.category)}`)} className="cursor-pointer inline-flex items-center gap-1.5 text-[13px] font-medium text-[#111111] bg-white border border-[#E5E7EB] rounded-[6px] px-3 py-1.5 shadow-sm hover:border-[#FFD400] transition-colors">
                   <Tag className="w-3.5 h-3.5 text-[#5F6368]" />{selectedCourse.category}
                 </span>
               )}
@@ -325,7 +320,7 @@ export default function ViewCourse() {
                     onClick={() => navigate(`/course/live/${courseId}`)}
                     className="w-full h-[52px] bg-white border border-[#E5E7EB] hover:bg-[#F8F9FA] text-[#111111] text-[15px] font-bold rounded-[6px] transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <Calendar className="w-5 h-5" /> Join Live Doubt Session
+                    <Calendar className="w-5 h-5" /> {isCourseCreator ? "Create Live Class" : "Join Live Class"}
                   </button>
                 )}
               </div>

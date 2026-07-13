@@ -162,7 +162,7 @@ function Home() {
             {CATEGORIES.map((cat) => (
               <div
                 key={cat.name}
-                onClick={() => navigate("/allcourses")}
+                onClick={() => navigate(`/allcourses?category=${encodeURIComponent(cat.name)}`)}
                 className="group cursor-pointer flex flex-col items-center text-center rounded-3xl p-6 lg:p-8 transition-all duration-300 hover:bg-[#FAFAFA]"
               >
                 {/* Large Icon Block */}
