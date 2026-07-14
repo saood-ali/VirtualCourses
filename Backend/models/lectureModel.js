@@ -18,11 +18,13 @@ const lectureSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    // AI ingestion metadata (Milestone 1 - Foundation Layer)
-    // Lifecycle (Milestone 2A): UPLOADED -> TRANSCRIBING -> READY | FAILED
+    //lifecycle:
+    //   UPLOADED -> TRANSCRIBING -> CHUNKING -> EMBEDDING -> READY | FAILED
+    // Milestone 2A only uses: UPLOADED, TRANSCRIBING, READY, FAILED.
+    // CHUNKING and EMBEDDING are reserved for later milestones (no future schema change needed).
     processingStatus: {
       type: String,
-      enum: ["UPLOADED", "TRANSCRIBING", "READY", "FAILED"],
+      enum: ["UPLOADED", "TRANSCRIBING", "CHUNKING", "EMBEDDING", "READY", "FAILED"],
       default: "UPLOADED",
     },
     chunkCount: {
@@ -32,7 +34,7 @@ const lectureSchema = new mongoose.Schema(
     },
     aiPipelineVersion: {
       type: String,
-      default: "",
+      default: "v1",
     },
   },
   { timestamps: true },
