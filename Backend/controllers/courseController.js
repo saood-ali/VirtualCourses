@@ -5,6 +5,7 @@ import Course from "../models/courseModel.js";
 import User from "../models/userModel.js";
 import Review from "../models/reviewModel.js";
 import { getOrSetCache, clearCache } from "../config/redis.js";
+import { transcribeLecture } from "../ai/ingestion/transcriptionService.js";
 
 const getPublicIdFromUrl = (url) => {
     if (!url) return null;
@@ -216,6 +217,10 @@ export const editLecture = async (req, res) => {
         if (!lecture) {
             return res.status(404).json({ message: "Lecture is not found" });
         }
+
+        // Track whether a new/changed video was attached, to trigger transcription.
+        const isNewVideo = videoUrl && videoUrl !== lecture.videoUrl;
+
         if (videoUrl) {
             lecture.videoUrl = videoUrl;
         }
@@ -226,8 +231,22 @@ export const editLecture = async (req, res) => {
             lecture.isPreviewFree = isPreviewFree;
         }
 
+        // A newly attached video invalidates any prior transcript/status.
+        if (isNewVideo) {
+            lecture.processingStatus = "UPLOADED";
+        }
+
         await lecture.save();
         await clearCache(`lecture:${lectureId}`);
+
+        // Kick off background transcription (fire-and-forget) so the API response
+        // is not delayed. Errors are handled inside the service, not here.
+        if (isNewVideo) {
+            transcribeLecture(lecture._id).catch((err) =>
+                console.error(`[Transcription] Trigger failed for ${lecture._id}:`, err.message)
+            );
+        }
+
         return res.status(200).json(lecture);
 
     } catch (error) {

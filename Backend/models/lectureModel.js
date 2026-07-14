@@ -19,10 +19,11 @@ const lectureSchema = new mongoose.Schema(
       default: false,
     },
     // AI ingestion metadata (Milestone 1 - Foundation Layer)
+    // Lifecycle (Milestone 2A): UPLOADED -> TRANSCRIBING -> READY | FAILED
     processingStatus: {
       type: String,
-      enum: ["pending", "processing", "completed", "failed"],
-      default: "pending",
+      enum: ["UPLOADED", "TRANSCRIBING", "READY", "FAILED"],
+      default: "UPLOADED",
     },
     chunkCount: {
       type: Number,
