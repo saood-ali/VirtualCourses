@@ -1,10 +1,10 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import Lecture from "../../models/lectureModel.js";
-import { fileManager, getGenerativeModel } from "../../services/ai/providers/geminiProvider.js";
-import { downloadFile } from "../../utils/fileDownloader.js";
-import { clearCache } from "../../config/redis.js";
+import Lecture from "../../../models/lectureModel.js";
+import { fileManager, getGenerativeModel } from "../providers/geminiProvider.js";
+import { downloadFile } from "../../../utils/fileDownloader.js";
+import { clearCache } from "../../../config/redis.js";
 
 // Maximum number of times we poll Gemini for file processing before giving up.
 // Poll interval is 2s, so 60 attempts ~= 2 minutes of processing wait.

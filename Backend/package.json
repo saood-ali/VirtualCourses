@@ -25,6 +25,7 @@
     "fs": "^0.0.1-security",
     "https": "^1.0.0",
     "ioredis": "^5.9.2",
+    "js-tiktoken": "^1.0.21",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^9.0.0",
     "multer": "^2.0.2",

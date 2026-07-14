@@ -5,7 +5,7 @@ import Course from "../models/courseModel.js";
 import User from "../models/userModel.js";
 import Review from "../models/reviewModel.js";
 import { getOrSetCache, clearCache } from "../config/redis.js";
-import { transcribeLecture } from "../ai/ingestion/transcriptionService.js";
+import { transcribeLecture } from "../services/ai/ingestion/transcriptionService.js";
 
 const getPublicIdFromUrl = (url) => {
     if (!url) return null;
