@@ -18,6 +18,21 @@ const lectureSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // AI ingestion metadata (Milestone 1 - Foundation Layer)
+    processingStatus: {
+      type: String,
+      enum: ["pending", "processing", "completed", "failed"],
+      default: "pending",
+    },
+    chunkCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    aiPipelineVersion: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true },
 );
