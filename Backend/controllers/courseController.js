@@ -5,7 +5,7 @@ import Course from "../models/courseModel.js";
 import User from "../models/userModel.js";
 import Review from "../models/reviewModel.js";
 import { getOrSetCache, clearCache } from "../config/redis.js";
-import { transcribeLecture } from "../services/ai/ingestion/transcriptionService.js";
+import { runLecturePipeline } from "../services/ai/ingestion/lecturePipeline.js";
 
 const getPublicIdFromUrl = (url) => {
     if (!url) return null;
@@ -239,11 +239,13 @@ export const editLecture = async (req, res) => {
         await lecture.save();
         await clearCache(`lecture:${lectureId}`);
 
-        // Kick off background transcription (fire-and-forget) so the API response
-        // is not delayed. Errors are handled inside the service, not here.
+        // Kick off the full ingestion pipeline (fire-and-forget) so the API
+        // response is not delayed: transcript -> chunks -> embeddings -> index
+        // readiness -> READY. The client polls /lecture-status/:lectureId for
+        // progress. Errors are handled inside the pipeline, not here.
         if (isNewVideo) {
-            transcribeLecture(lecture._id).catch((err) =>
-                console.error(`[Transcription] Trigger failed for ${lecture._id}:`, err.message)
+            runLecturePipeline(lecture._id).catch((err) =>
+                console.error(`[Pipeline] Trigger failed for ${lecture._id}:`, err.message)
             );
         }
 
@@ -290,6 +292,11 @@ export const getLectureById = async (req, res) => {
             lectureTitle: lecture.lectureTitle,
             videoUrl: lecture.videoUrl,
             isPreviewFree: lecture.isPreviewFree,
+            // Initial processing snapshot so the client can resume the progress
+            // checklist on a page refresh. Live updates come from
+            // GET /api/course/lecture-status/:lectureId (uncached).
+            processingStatus: lecture.processingStatus,
+            chunkCount: lecture.chunkCount,
             _id: lecture._id
         });
 

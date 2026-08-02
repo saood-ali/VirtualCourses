@@ -79,6 +79,10 @@ export const explainLecture = async (req, res) => {
 
       if (retrieved.length === 0) {
         // Either the lecture has not finished ingestion, or nothing matched.
+        // READY with no chunks means the old pipeline marked it READY before
+        // chunking ran; the lecture is still being processed. A lecture that
+        // finished ingestion but had no matching chunks reports READY with a
+        // chunkCount > 0 — that is the genuine "no match" case.
         const stillProcessing =
           lecture.processingStatus !== "READY" || lecture.chunkCount === 0;
 
