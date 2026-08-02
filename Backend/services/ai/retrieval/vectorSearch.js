@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import LectureChunk from "../../../models/lectureChunkModel.js";
 import { getEmbeddingModel, EMBEDDING_DIMENSIONS } from "../providers/geminiProvider.js";
+import { RETRIEVAL_PROJECTION, createRetrievalResult } from "./retrievalResult.js";
 
 // Atlas Vector Search index name. Must match the index created manually in
 // Atlas from docs/atlas-vector-index.json (cosine similarity, 3072 dims,
@@ -11,18 +12,6 @@ export const VECTOR_INDEX_NAME =
 // Candidates Atlas considers before returning `limit`. Atlas recommends
 // numCandidates >> limit for good recall.
 const NUM_CANDIDATES_MULTIPLIER = 10;
-
-// Fields returned to the caller. `embedding` is deliberately excluded so
-// vectors never leave MongoDB.
-const PROJECTION = {
-  _id: 1,
-  lectureId: 1,
-  courseId: 1,
-  chunkIndex: 1,
-  text: 1,
-  startTimestamp: 1,
-  endTimestamp: 1,
-};
 
 const toObjectId = (value) => {
   if (!value) return null;
@@ -84,7 +73,8 @@ const buildAtlasFilter = ({ lectureId, courseId } = {}) => {
  *
  * @param {number[]} queryEmbedding
  * @param {{ limit?: number, lectureId?: string, courseId?: string }} options
- * @returns {Promise<Array<object>>} ranked results, best first
+ * @returns {Promise<Array<object>>} RetrievalResult[], best first,
+ *   keywordScore = 0 and rrfScore = 0
  */
 export const vectorSearch = async (queryEmbedding, options = {}) => {
   const { limit = 20, lectureId, courseId } = options;
@@ -104,10 +94,13 @@ export const vectorSearch = async (queryEmbedding, options = {}) => {
   const filter = buildAtlasFilter({ lectureId, courseId });
   if (filter) stage.filter = filter;
 
-  return LectureChunk.aggregate([
+  // Atlas returns results already ranked by cosine similarity.
+  const docs = await LectureChunk.aggregate([
     { $vectorSearch: stage },
-    { $project: { ...PROJECTION, vectorScore: { $meta: "vectorSearchScore" } } },
+    { $project: { ...RETRIEVAL_PROJECTION, vectorScore: { $meta: "vectorSearchScore" } } },
   ]);
+
+  return docs.map((doc) => createRetrievalResult(doc, { vectorScore: doc.vectorScore }));
 };
 
 export default vectorSearch;

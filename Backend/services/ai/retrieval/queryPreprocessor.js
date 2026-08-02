@@ -74,13 +74,4 @@ export const extractKeywordTerms = (normalizedQuery) => {
   return terms;
 };
 
-/**
- * Escape a term for safe use inside a MongoDB $regex.
- * Prevents user input from being interpreted as a regular expression.
- *
- * @param {string} term
- * @returns {string}
- */
-export const escapeRegex = (term) => String(term).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
 export default normalizeQuery;

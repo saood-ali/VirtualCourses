@@ -1,23 +1,13 @@
 import mongoose from "mongoose";
 import LectureChunk from "../../../models/lectureChunkModel.js";
-import { escapeRegex } from "./queryPreprocessor.js";
+import { RETRIEVAL_PROJECTION, createRetrievalResult } from "./retrievalResult.js";
 
-// Fields returned to the caller. `embedding` is deliberately excluded.
-const PROJECTION = {
-  _id: 1,
-  lectureId: 1,
-  courseId: 1,
-  chunkIndex: 1,
-  text: 1,
-  startTimestamp: 1,
-  endTimestamp: 1,
-};
-
-// A match on the curated `keywords` array is a stronger signal than an
-// incidental occurrence in the chunk body, so it is weighted higher. Both
-// weights are fixed constants — scoring stays fully deterministic.
-const KEYWORD_FIELD_WEIGHT = 2;
-const TEXT_FIELD_WEIGHT = 1;
+// Deterministic keyword search. No AI, no LLM, no embeddings, and no
+// MongoDB $text index — matching is a plain $in over the normalized
+// LectureChunk.keywords array, and scoring happens here in the service.
+//
+// This keeps behaviour identical across every Atlas tier and cluster, with no
+// dependency on text-index availability or Atlas Search analyzers.
 
 const toObjectId = (value) => {
   if (!value) return null;
@@ -26,89 +16,78 @@ const toObjectId = (value) => {
 };
 
 /**
- * Deterministic keyword search. No AI, no LLM, no embeddings.
+ * Count how many distinct query terms appear in a chunk's keywords.
+ * Stored keywords are expected to be normalized (lowercase) at ingestion
+ * time; lowercasing here as well keeps the score correct either way.
  *
- * Score = (weighted) count of distinct query terms matched:
- *   - each term present in LectureChunk.keywords  -> KEYWORD_FIELD_WEIGHT
- *   - each term present in LectureChunk.text      -> TEXT_FIELD_WEIGHT
+ * @param {string[]} terms distinct, lowercased query terms
+ * @param {string[]} keywords stored chunk keywords
+ * @returns {number} number of matched terms
+ */
+const scoreKeywordMatches = (terms, keywords) => {
+  if (!Array.isArray(keywords) || keywords.length === 0) return 0;
+
+  const stored = new Set(keywords.map((k) => String(k).toLowerCase()));
+  let matches = 0;
+  for (const term of terms) {
+    if (stored.has(term)) matches += 1;
+  }
+  return matches;
+};
+
+/**
+ * Keyword retrieval arm.
  *
- * `keywords` is the primary field per the design. The `text` arm exists
- * because keyword extraction is not yet part of ingestion (chunkPipeline
- * currently stores `keywords: []`), so a keywords-only search would score
- * every chunk 0 against existing data. Once keywords are populated they
- * simply dominate the score — no code change needed.
+ * Mongo does the selection ($in), the service does the scoring. Only chunks
+ * sharing at least one keyword with the query are fetched, so the candidate
+ * set stays small — no collection scan and no scoring work in the database.
  *
- * Counting is done inside MongoDB via $setIntersection / $reduce; no chunk
- * bodies are scanned in Node.
+ * Scope filters are applied in the same query, never after retrieval.
  *
  * @param {string[]} terms deterministic query terms (lowercased, de-duped)
  * @param {{ limit?: number, lectureId?: string, courseId?: string }} options
- * @returns {Promise<Array<object>>} ranked results, best first
+ * @returns {Promise<Array<object>>} RetrievalResult[], best first,
+ *   vectorScore = 0 and rrfScore = 0
  */
 export const keywordSearch = async (terms, options = {}) => {
   const { limit = 20, lectureId, courseId } = options;
 
   if (!Array.isArray(terms) || terms.length === 0) return [];
 
-  // Case-insensitive whole-word regexes, anchored on word boundaries so
-  // "map" does not match "mapping". User input is escaped.
-  const textRegexes = terms.map((term) => new RegExp(`\\b${escapeRegex(term)}\\b`, "i"));
-
-  const match = {
-    $or: [{ keywords: { $in: terms } }, { text: { $in: textRegexes } }],
-  };
+  const query = { keywords: { $in: terms } };
 
   const lectureObjectId = toObjectId(lectureId);
-  if (lectureObjectId) match.lectureId = lectureObjectId;
+  if (lectureObjectId) query.lectureId = lectureObjectId;
 
   const courseObjectId = toObjectId(courseId);
-  if (courseObjectId) match.courseId = courseObjectId;
+  if (courseObjectId) query.courseId = courseObjectId;
 
-  return LectureChunk.aggregate([
-    { $match: match },
-    {
-      $addFields: {
-        // Distinct query terms found in the curated keywords array.
-        _keywordHits: {
-          $size: {
-            $setIntersection: [
-              terms,
-              { $map: { input: { $ifNull: ["$keywords", []] }, in: { $toLower: "$$this" } } },
-            ],
-          },
-        },
-        // Distinct query terms occurring as whole words in the chunk body.
-        _textHits: {
-          $reduce: {
-            input: textRegexes,
-            initialValue: 0,
-            in: {
-              $add: [
-                "$$value",
-                { $cond: [{ $regexMatch: { input: "$text", regex: "$$this" } }, 1, 0] },
-              ],
-            },
-          },
-        },
-      },
-    },
-    {
-      $addFields: {
-        keywordScore: {
-          $add: [
-            { $multiply: ["$_keywordHits", KEYWORD_FIELD_WEIGHT] },
-            { $multiply: ["$_textHits", TEXT_FIELD_WEIGHT] },
-          ],
-        },
-      },
-    },
-    { $match: { keywordScore: { $gt: 0 } } },
+  // Fetch only candidates that match at least one keyword (the $in does the
+  // selection in Mongo), projecting the retrieval fields plus `keywords`
+  // (needed for scoring) — never `embedding`. .lean() avoids hydrating
+  // Mongoose documents we immediately reshape.
+  const candidates = await LectureChunk.find(query, {
+    ...RETRIEVAL_PROJECTION,
+    keywords: 1,
+  }).lean();
+
+  return candidates
+    .map((doc) =>
+      createRetrievalResult(doc, { keywordScore: scoreKeywordMatches(terms, doc.keywords) })
+    )
+    // Drop chunks that matched nothing (score 0). The $in matched a keyword,
+    // so this only filters an empty keywords array, but it guarantees the
+    // arm never hands RRF a chunk with a keywordScore of 0.
+    .filter((result) => result.keywordScore > 0)
     // Deterministic ordering: score desc, then a stable tiebreak so equal
     // scores always rank identically across runs.
-    { $sort: { keywordScore: -1, lectureId: 1, chunkIndex: 1 } },
-    { $limit: limit },
-    { $project: { ...PROJECTION, keywordScore: 1 } },
-  ]);
+    .sort(
+      (a, b) =>
+        b.keywordScore - a.keywordScore ||
+        a.lectureId.localeCompare(b.lectureId) ||
+        a.chunkIndex - b.chunkIndex
+    )
+    .slice(0, limit);
 };
 
 export default keywordSearch;

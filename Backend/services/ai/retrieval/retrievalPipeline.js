@@ -8,21 +8,6 @@ export const VECTOR_CANDIDATES = 20;
 export const KEYWORD_CANDIDATES = 20;
 export const FINAL_TOP_K = 12;
 
-// Explicit output shape. Guarantees `embedding` can never leak, regardless of
-// what the underlying stages project.
-const shapeChunk = (doc) => ({
-  chunkId: String(doc._id),
-  lectureId: String(doc.lectureId),
-  courseId: String(doc.courseId),
-  chunkIndex: doc.chunkIndex,
-  text: doc.text,
-  startTimestamp: doc.startTimestamp ?? 0,
-  endTimestamp: doc.endTimestamp ?? 0,
-  vectorScore: typeof doc.vectorScore === "number" ? doc.vectorScore : null,
-  keywordScore: typeof doc.keywordScore === "number" ? doc.keywordScore : 0,
-  rrfScore: doc.rrfScore,
-});
-
 /**
  * Hybrid retrieval: vector search + keyword search fused with RRF.
  *
@@ -34,9 +19,9 @@ const shapeChunk = (doc) => ({
  * @param {string} question raw user question
  * @param {{ lectureId?: string, courseId?: string, limit?: number }} options
  *   lectureId / courseId are applied inside the Atlas query and the keyword
- *   `$match`, not as a post-retrieval filter.
- * @returns {Promise<{ query: string, terms: string[], chunks: Array<object>,
- *   stats: object }>}
+ *   query, not as a post-retrieval filter.
+ * @returns {Promise<{ query: string, terms: string[],
+ *   chunks: Array<object>, stats: object }>} chunks are RetrievalResult[]
  */
 export const retrieveChunks = async (question, options = {}) => {
   const { lectureId, courseId, limit = FINAL_TOP_K } = options;
@@ -79,7 +64,8 @@ export const retrieveChunks = async (question, options = {}) => {
   return {
     query,
     terms,
-    chunks: fused.map(shapeChunk),
+    // Already RetrievalResult[] — fused, capped at `limit`, no embedding field.
+    chunks: fused,
     stats: {
       vectorCount: vectorResults.length,
       keywordCount: keywordResults.length,
