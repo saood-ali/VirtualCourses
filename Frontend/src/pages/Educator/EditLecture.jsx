@@ -1,17 +1,33 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { ClipLoader, HashLoader } from "react-spinners";
 import ReactPlayer from 'react-player';
-import { 
-  ArrowLeft, ChevronDown, Trash2, Upload, Video, 
-  CheckCircle2, AlertCircle, Eye, PlayCircle 
+import {
+  ArrowLeft, ChevronDown, Trash2, Upload, Video,
+  CheckCircle2, AlertCircle, Eye, PlayCircle,
+  Loader2, Circle, Sparkles
 } from "lucide-react";
 
 import axiosClient from "../../config/axiosClient.js";
 import { setLectureData } from "../../redux/lectureSlice.js";
+
+// Labels for the AI ingestion stages reported by
+// GET /api/course/lecture-status/:lectureId. The stage ORDER comes from the
+// server (`stages`), so adding a pipeline stage does not require a change here.
+const STAGE_LABELS = {
+  TRANSCRIBING: "Generating transcript...",
+  CHUNKING: "Building search index...",
+  EMBEDDING: "Generating embeddings...",
+  INDEXING: "Finalizing search index...",
+};
+
+// Statuses that mean "still working" — these keep the poll loop alive.
+const IN_PROGRESS = ["PENDING", "PROCESSING"];
+
+const POLL_INTERVAL_MS = 3000;
 
 export default function EditLecture() {
   const { courseId, lectureId } = useParams();
@@ -32,9 +48,54 @@ export default function EditLecture() {
 
   // Loading States
   const [pageLoading, setPageLoading] = useState(!preSelectedLecture);
-  const [loading, setLoading] = useState(false); 
-  const [loading1, setLoading1] = useState(false); 
+  const [loading, setLoading] = useState(false);
+  const [loading1, setLoading1] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  // AI ingestion progress: { status, stage, stages, message, chunkCount } | null
+  const [processing, setProcessing] = useState(null);
+  const pollRef = useRef(null);
+
+  // --- Processing status polling ---
+  const stopPolling = () => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  };
+
+  // Reads current pipeline state and keeps a 3s poll running while work remains.
+  // Self-scheduling rather than effect-driven so it can be called directly after
+  // a save without waiting for a render.
+  const refreshStatus = async () => {
+    try {
+      const { data } = await axiosClient.get(`/api/course/lecture-status/${lectureId}`);
+      setProcessing(data);
+
+      if (IN_PROGRESS.includes(data.status)) {
+        if (!pollRef.current) {
+          pollRef.current = setInterval(refreshStatus, POLL_INTERVAL_MS);
+        }
+      } else {
+        stopPolling();
+      }
+    } catch (error) {
+      // A failing status check should not break the editor; stop polling so a
+      // broken endpoint cannot spam requests.
+      console.error("Failed to fetch lecture status:", error);
+      stopPolling();
+    }
+  };
+
+  // Resume the checklist on mount/refresh — processing continues server-side
+  // even if the educator reloads or navigates back. refreshStatus is re-created
+  // each render, so it is intentionally not a dependency: including it would
+  // tear down and restart the poll interval on every render.
+  useEffect(() => {
+    refreshStatus();
+    return stopPolling;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lectureId]);
 
   // --- 1. Fetch Data on Refresh ---
   useEffect(() => {
@@ -106,6 +167,10 @@ export default function EditLecture() {
     }
 
     setLoading(true);
+    // Captured before the async work: a new video is what kicks off the AI
+    // ingestion pipeline server-side, and therefore what we stay to watch.
+    const hasNewVideo = Boolean(videoFile);
+
     try {
       let finalVideoUrl = currentVideoUrl;
       if (videoFile) {
@@ -120,12 +185,22 @@ export default function EditLecture() {
       };
 
       const result = await axiosClient.post(`/api/course/editlecture/${lectureId}`, payload);
-      
+
       const updatedLectures = lectureData.map(l => l._id === lectureId ? result.data : l);
       dispatch(setLectureData(updatedLectures));
 
       toast.success("Lecture Updated Successfully");
-      navigate(`/createlecture/${courseId}`);
+
+      if (hasNewVideo) {
+        // Stay on the page so the educator can watch the processing checklist —
+        // navigating away here would unmount the poller and hide the progress
+        // they need to see before the AI tutor works on this lecture.
+        setVideoFile(null);
+        setCurrentVideoUrl(finalVideoUrl);
+        refreshStatus();
+      } else {
+        navigate(`/createlecture/${courseId}`);
+      }
     } catch (error) {
       console.error(error);
       toast.error(error.response?.data?.message || "Update failed");
@@ -243,6 +318,9 @@ export default function EditLecture() {
 
               </div>
             </div>
+
+            {/* ── AI Processing Checklist ── */}
+            {processing && <ProcessingCard processing={processing} />}
           </div>
 
           {/* ── Right Column: Settings & Media ── */}
@@ -327,6 +405,95 @@ export default function EditLecture() {
         </button>
       </div>
 
+    </div>
+  );
+}
+
+// ── AI Processing Checklist ──
+// Mirrors the ingestion pipeline so the educator never sees a lecture that looks
+// uploaded but isn't searchable yet. Stage order comes from the server payload.
+function ProcessingCard({ processing }) {
+  const { status, stage, stages = [], message } = processing;
+
+  const isFailed = status === "FAILED";
+  const isReady = status === "READY";
+
+  // Everything before the current stage is done; READY means all of them are.
+  const currentIdx = isReady
+    ? stages.length
+    : status === "PROCESSING"
+      ? stages.indexOf(stage)
+      : -1;
+
+  return (
+    <div className="bg-white border border-[#E5E7EB] rounded-[8px] p-8 shadow-sm">
+      {/* Header */}
+      <div className="flex items-center gap-2.5 mb-1">
+        {isFailed ? (
+          <AlertCircle className="w-4.5 h-4.5 text-red-600 shrink-0" />
+        ) : isReady ? (
+          <CheckCircle2 className="w-4.5 h-4.5 text-[#22C55E] shrink-0" />
+        ) : (
+          <Loader2 className="w-4.5 h-4.5 text-[#111111] shrink-0 animate-spin" />
+        )}
+        <h2 className="text-[18px] font-bold text-[#111111]">
+          {isFailed ? "Processing Failed" : isReady ? "Ready" : "Processing..."}
+        </h2>
+      </div>
+
+      <p className={`text-[13px] font-medium mb-6 ${isFailed ? "text-red-600" : "text-[#5F6368]"}`}>
+        {isFailed
+          ? message
+          : isReady
+            ? "Students can now ask the AI tutor about this lecture."
+            : "Preparing this lecture for the AI tutor. You can safely leave this page."}
+      </p>
+
+      {/* Stage checklist */}
+      {!isFailed && (
+        <ul className="space-y-3">
+          {stages.map((name, i) => {
+            const isDone = i < currentIdx;
+            const isActive = i === currentIdx && status === "PROCESSING";
+
+            return (
+              <li key={name} className="flex items-center gap-3">
+                {isDone ? (
+                  <CheckCircle2 className="w-4 h-4 text-[#22C55E] shrink-0" />
+                ) : isActive ? (
+                  <Loader2 className="w-4 h-4 text-[#111111] shrink-0 animate-spin" />
+                ) : (
+                  <Circle className="w-4 h-4 text-[#D1D5DB] shrink-0" />
+                )}
+                <span
+                  className={`text-[13px] ${
+                    isDone
+                      ? "font-medium text-[#5F6368]"
+                      : isActive
+                        ? "font-bold text-[#111111]"
+                        : "font-medium text-[#9CA3AF]"
+                  }`}
+                >
+                  {STAGE_LABELS[name] || name}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {/* Queued / ready footnote */}
+      {status === "PENDING" && (
+        <p className="text-[12px] font-medium text-[#9CA3AF] mt-5">{message}</p>
+      )}
+      {isReady && (
+        <div className="mt-6 flex items-center gap-2 bg-[#FFD400]/10 border border-[#FFD400]/40 rounded-[6px] px-4 py-3">
+          <Sparkles className="w-4 h-4 text-[#111111] shrink-0" />
+          <span className="text-[12px] font-bold text-[#111111]">
+            AI tutor enabled for this lecture.
+          </span>
+        </div>
+      )}
     </div>
   );
 }
