@@ -63,8 +63,10 @@ export const chunkLecture = async (lectureId) => {
     await LectureChunk.deleteMany({ lectureId });
 
     if (chunks.length === 0) {
+      // No chunks produced — nothing to embed, so there is no downstream work.
+      // Keep the current status (do not invent READY); the orchestrator decides
+      // the terminal state. See transcribeLecture: only the orchestrator sets READY.
       lecture.chunkCount = 0;
-      lecture.processingStatus = "READY";
       await lecture.save();
       await clearCache(`lecture:${lectureId}`);
       console.log(`[Chunking] No chunks produced for lecture ${lectureId} (empty transcript).`);
@@ -91,9 +93,9 @@ export const chunkLecture = async (lectureId) => {
     // Bulk insert (never one-by-one).
     await LectureChunk.insertMany(docs);
 
-    // Step 6: update the lecture.
+    // Step 6: update the lecture. Status stays CHUNKING; the orchestrator
+    // advances it to EMBEDDING (and only it decides READY).
     lecture.chunkCount = docs.length;
-    lecture.processingStatus = "READY";
     await lecture.save();
     await clearCache(`lecture:${lectureId}`);
 

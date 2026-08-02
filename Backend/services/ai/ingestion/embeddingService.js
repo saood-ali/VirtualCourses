@@ -40,11 +40,6 @@ export const embedLecture = async (lectureId) => {
     // Idempotency: if every chunk already has a correctly-sized embedding, skip.
     const pending = chunks.filter((c) => !hasEmbedding(c));
     if (pending.length === 0) {
-      if (lecture.processingStatus !== "READY") {
-        lecture.processingStatus = "READY";
-        await lecture.save();
-        await clearCache(`lecture:${lectureId}`);
-      }
       console.log(`[Embedding] Skipped lecture ${lectureId} — all ${chunks.length} chunks already embedded.`);
       return { embedded: 0, skipped: true };
     }
@@ -92,11 +87,9 @@ export const embedLecture = async (lectureId) => {
       await LectureChunk.bulkWrite(bulkOps);
     }
 
-    lecture.processingStatus = "READY";
-    await lecture.save();
-    await clearCache(`lecture:${lectureId}`);
-
-    console.log(`[Embedding] Lecture ${lectureId} — embedded ${bulkOps.length} chunk(s), status READY.`);
+    // Status stays EMBEDDING; the orchestrator advances it to the final stage
+    // (INDEXING -> READY). This service never sets READY itself.
+    console.log(`[Embedding] Lecture ${lectureId} — embedded ${bulkOps.length} chunk(s).`);
     return { embedded: bulkOps.length, skipped: false };
   } catch (error) {
     console.error(`[Embedding] FAILED for lecture ${lectureId}:`, error.message);

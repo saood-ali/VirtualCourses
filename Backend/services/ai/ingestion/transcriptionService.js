@@ -43,9 +43,11 @@ export const cleanTranscript = (raw) => {
 
 /**
  * Background transcription for a single lecture.
- * Fire-and-forget: callers should NOT await this so the API response is unaffected.
  * Idempotent: if a usable transcript already exists it will not be regenerated.
- * Lifecycle (2A): UPLOADED -> TRANSCRIBING -> READY | FAILED
+ *
+ * Stage-only: this sets TRANSCRIBING and leaves it there on success. It does
+ * NOT set READY — only the orchestrator (lecturePipeline.js) may do that, once
+ * the lecture is actually searchable. Call it via runLecturePipeline().
  */
 export const transcribeLecture = async (lectureId) => {
   let tempFilePath = null;
@@ -60,11 +62,6 @@ export const transcribeLecture = async (lectureId) => {
 
     // Skip if a usable transcript already exists (do not regenerate).
     if (lecture.transcript && lecture.transcript.length >= 50) {
-      if (lecture.processingStatus !== "READY") {
-        lecture.processingStatus = "READY";
-        await lecture.save();
-        await clearCache(`lecture:${lectureId}`);
-      }
       console.log(`[Transcription] Skipped "${lecture.lectureTitle}" — transcript already present.`);
       return;
     }
@@ -115,8 +112,8 @@ export const transcribeLecture = async (lectureId) => {
     const rawTranscript = result.response.text();
     const cleaned = cleanTranscript(rawTranscript);
 
+    // Status stays TRANSCRIBING; the orchestrator advances it to the next stage.
     lecture.transcript = cleaned;
-    lecture.processingStatus = "READY";
     await lecture.save();
 
     // Invalidate cached lecture so readers see the fresh transcript/status.
