@@ -19,12 +19,14 @@ const lectureSchema = new mongoose.Schema(
       default: false,
     },
     //lifecycle:
-    //   UPLOADED -> TRANSCRIBING -> CHUNKING -> EMBEDDING -> READY | FAILED
-    // Milestone 2A only uses: UPLOADED, TRANSCRIBING, READY, FAILED.
-    // CHUNKING and EMBEDDING are reserved for later milestones (no future schema change needed).
+    //   UPLOADED -> TRANSCRIBING -> CHUNKING -> EMBEDDING -> INDEXING -> READY | FAILED
+    // `INDEXING` is the brief Atlas-vector-index-readiness probe that runs after
+    // embeddings are written; READY now provably means "vector search works".
+    // Old milestones used only UPLOADED/TRANSCRIBING/READY/FAILED; CHUNKING and
+    // EMBEDDING were reserved and are now used.
     processingStatus: {
       type: String,
-      enum: ["UPLOADED", "TRANSCRIBING", "CHUNKING", "EMBEDDING", "READY", "FAILED"],
+      enum: ["UPLOADED", "TRANSCRIBING", "CHUNKING", "EMBEDDING", "INDEXING", "READY", "FAILED"],
       default: "UPLOADED",
     },
     chunkCount: {

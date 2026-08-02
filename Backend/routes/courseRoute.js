@@ -6,6 +6,7 @@ import { createCourse, createLecture, editCourse,
 import upload from "../middleware/multer.js";
 import isAuth from "../middleware/isAuth.js";
 import { searchWithAi, explainLecture } from "../controllers/searchController.js";
+import { getLectureStatus } from "../controllers/lectureStatusController.js";
 const courseRouter = express.Router();
 //for courses
 courseRouter.post("/create",isAuth,createCourse);
@@ -22,6 +23,8 @@ courseRouter.post("/editlecture/:lectureId",isAuth,editLecture);
 courseRouter.delete("/removelecture/:lectureId",isAuth,removeLecture);
 courseRouter.post("/creator",isAuth,getCreatorById);
 courseRouter.get("/getlecture/:lectureId",isAuth,getLectureById);
+// Live ingestion progress (polled by the educator's processing checklist).
+courseRouter.get("/lecture-status/:lectureId",isAuth,getLectureStatus);
 
 //for search
 courseRouter.post("/search",isAuth,searchWithAi);
