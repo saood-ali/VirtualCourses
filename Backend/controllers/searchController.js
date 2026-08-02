@@ -1,33 +1,16 @@
 import Course from "../models/courseModel.js";
 import Lecture from "../models/lectureModel.js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { GoogleAIFileManager } from "@google/generative-ai/server";
-import fs from "fs";
-import os from "os";
-import path from "path";
-import axios from "axios";
+import { normalizeQuery } from "../services/ai/retrieval/queryPreprocessor.js";
+import { retrieveChunks } from "../services/ai/retrieval/retrievalPipeline.js";
+import { rerankChunks, RERANK_TOP_N } from "../services/ai/generation/reranker.js";
+import { generateAnswer } from "../services/ai/generation/answerGenerator.js";
 import dotenv from "dotenv";
 dotenv.config();
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
 
-// Helper: Download File
-const downloadFile = async (url, destPath) => {
-  const writer = fs.createWriteStream(destPath);
-  const response = await axios({
-    url,
-    method: 'GET',
-    responseType: 'stream'
-  });
-  response.data.pipe(writer);
-  return new Promise((resolve, reject) => {
-    writer.on('finish', resolve);
-    writer.on('error', reject);
-  });
-};
-
-// SEARCH FEATURE 
+// SEARCH FEATURE
 export const searchWithAi = async (req, res) => {
     try {
         const { input } = req.body;
@@ -68,90 +51,69 @@ export const searchWithAi = async (req, res) => {
     }
 };
 
-// EXPLAIN LECTURE FEATURE 
+// EXPLAIN LECTURE FEATURE
+// Hybrid RAG: retrieval (vector + keyword + RRF) -> Gemini rerank -> answer.
+// Exactly two Gemini calls per request: one rerank, one generation.
+//
+// Transcription/chunking/embedding are the ingestion pipeline's job, so this
+// controller no longer downloads or transcribes video inline. If a lecture has
+// not been ingested yet there is nothing to retrieve, and the request returns
+// a clear "not ready" message instead of blocking on a long video upload.
 export const explainLecture = async (req, res) => {
-    let tempFilePath = null; 
-    let uploadResult = null;
-
     try {
-      const { lectureId, currentTimestamp, userQuestion } = req.body;
-      
-      const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL }); 
-  
+      const { lectureId, userQuestion } = req.body;
+
       if (!lectureId) return res.status(400).json({ message: "Lecture ID is required" });
-  
-      const lecture = await Lecture.findById(lectureId);
+
+      const lecture = await Lecture.findById(lectureId).select("lectureTitle processingStatus chunkCount");
       if (!lecture) return res.status(404).json({ message: "Lecture not found" });
-  
-      let transcriptText = lecture.transcript;
-  
-      // AUTO-GENERATE TRANSCRIPT 
-      if (!transcriptText || transcriptText.length < 50) {
-          console.log(`⚠️ Transcript missing for "${lecture.lectureTitle}". Starting analysis...`);
-          
-          tempFilePath = path.join(os.tmpdir(), `lecture-${lectureId}-${Date.now()}.mp4`);
-          
-          try {
-              console.log("⬇️ Downloading video...");
-              await downloadFile(lecture.videoUrl, tempFilePath);
-              
-              console.log("⬆️ Uploading to Gemini...");
-              uploadResult = await fileManager.uploadFile(tempFilePath, {
-                  mimeType: "video/mp4",
-                  displayName: `Lecture_${lectureId}`,
-              });
-              
-              let file = await fileManager.getFile(uploadResult.file.name);
-              while (file.state === "PROCESSING") {
-                  await new Promise((resolve) => setTimeout(resolve, 2000));
-                  file = await fileManager.getFile(uploadResult.file.name);
-              }
 
-              if (file.state === "FAILED") throw new Error("Video processing failed by Google AI");
-
-              console.log("🧠 Generating transcript...");
-              const result = await model.generateContent([
-                  {
-                      fileData: { mimeType: uploadResult.file.mimeType, fileUri: uploadResult.file.uri }
-                  },
-                  { text: "Generate a detailed transcript of the spoken audio." }
-              ]);
-
-              transcriptText = result.response.text();
-              lecture.transcript = transcriptText;
-              await lecture.save(); 
-              console.log("💾 Transcript saved!");
-
-          } catch (innerError) {
-              console.error("❌ TRANSCRIPTION FAILED:", innerError.message);
-              // Fallback logic
-              transcriptText = `Transcript unavailable for "${lecture.lectureTitle}".`;
-              
-              if (innerError.message.includes("404")) {
-                   console.log("🔍 DIAGNOSTIC: Listing available models...");
-                   console.log("Check API Key permissions in Google AI Studio.");
-              }
-          }
+      const question = normalizeQuery(userQuestion);
+      if (!question) {
+        return res.status(400).json({ message: "A question is required" });
       }
-  
-      //  Answer Question 
-      const prompt = `
-        You are an expert coding tutor.
-        TRANSCRIPT: ${transcriptText.substring(0, 20000)}
-        QUESTION: "${userQuestion}" at ${currentTimestamp}s.
-        INSTRUCTION: Answer in 2 sentences.
-      `;
-  
-      const response = await model.generateContent(prompt);
-      const answer = response.response.text();
-  
-      return res.status(200).json({ success: true, answer: answer });
-  
+
+      // Step 1 — hybrid retrieval, scoped to this lecture (filter applied
+      // inside the Atlas query, not after).
+      const { chunks: retrieved } = await retrieveChunks(question, { lectureId });
+
+      if (retrieved.length === 0) {
+        // Either the lecture has not finished ingestion, or nothing matched.
+        const stillProcessing =
+          lecture.processingStatus !== "READY" || lecture.chunkCount === 0;
+
+        console.log(
+          `[ExplainLecture] No chunks for lecture ${lectureId} ` +
+            `(status=${lecture.processingStatus}, chunks=${lecture.chunkCount}).`
+        );
+
+        return res.status(200).json({
+          success: true,
+          answer: stillProcessing
+            ? "This lecture is still being processed. Please try again in a few minutes."
+            : "I couldn't find anything in this lecture related to that question. Try rephrasing it.",
+          sources: [],
+        });
+      }
+
+      // Step 2 — rerank the top 12 down to the top 4 (one Gemini call).
+      const reranked = await rerankChunks(question, retrieved, { topN: RERANK_TOP_N });
+
+      // Step 3 — generate the answer from those 4 chunks (one Gemini call).
+      // Timestamps in `sources` come from the chunk documents, never from the model.
+      const { answer, sources } = await generateAnswer(question, reranked);
+
+      console.log(
+        `[ExplainLecture] lecture=${lectureId} retrieved=${retrieved.length} ` +
+          `reranked=${reranked.length} sources=${sources.length}`
+      );
+
+      // `success` and `answer` preserve the existing frontend contract;
+      // `sources` is additive. No embeddings or internal scores are exposed.
+      return res.status(200).json({ success: true, answer, sources });
+
     } catch (error) {
       console.error("🔥 CONTROLLER ERROR:", error.message);
       return res.status(500).json({ message: "AI Tutor is currently overloaded. Please try again later." });
-    } finally {
-        if (tempFilePath && fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
-        if (uploadResult) fileManager.deleteFile(uploadResult.file.name).catch(e => {});
     }
 };
