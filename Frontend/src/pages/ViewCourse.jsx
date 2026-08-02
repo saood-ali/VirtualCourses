@@ -15,6 +15,7 @@ import { setSelectedCourse } from "../redux/courseSlice.js";
 import axiosClient from "../config/axiosClient.js";
 import Card from "../components/Card.jsx";
 import AIExplainer from "../components/AIExplainer.jsx";
+import CourseChat from "../components/CourseChat.jsx";
 import img from "../assets/empty_folder.png";
 
 export default function ViewCourse() {
@@ -476,6 +477,11 @@ export default function ViewCourse() {
                <p className="text-[14px] text-[#5F6368] leading-relaxed">
                  {creatorData?.description || "No biography provided."}
                </p>
+             </div>
+
+             {/* Real-time course discussion (Socket.io) */}
+             <div className="sticky top-[104px]">
+               <CourseChat courseId={courseId} enabled={Boolean(userData && isEnrolled)} />
              </div>
           </div>
           
