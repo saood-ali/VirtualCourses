@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 
 import ai_student from "../assets/ai_student.png";
-import video from "../assets/Modified_Video_With_More_Texts.mp4";
 import BlurText from "../components/BlurText.jsx";
 
 const CATEGORIES = [

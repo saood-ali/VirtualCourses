@@ -2,7 +2,6 @@
 import about from "../assets/ai_student.png";
 import { TfiLayoutLineSolid } from "react-icons/tfi";
 import { BsPatchCheckFill } from "react-icons/bs";
-import video from "../assets/Modified_Video_With_More_Texts.mp4";
 
 function About() {
   return (
@@ -10,15 +9,6 @@ function About() {
       {/* For Image area */}
       <div className="lg:w-[40%] md:w-[80%] w-full h-full flex items-center justify-center relative">
         <img src={about} alt="" className="w-[80%] h-[90%] rounded-lg" />
-        <div className="max-w-[350px] mx-auto p-4 absolute top-[55%] left-[50%]">
-          <video
-            src={video}
-            className="w-full rounded-xl shadow-lg border-2 border-white"
-            controls
-            autoplay
-            loop
-          />
-        </div>
       </div>
       {/* For about info */}
       <div className="lg:w-[50%] md:w-[70%] w-full h-full flex items-start justify-center flex-col px-[35px] md:px-[80px]">
