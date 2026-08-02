@@ -1,0 +1,19 @@
+{
+  "_comment": "MongoDB Atlas Vector Search index definition for the 'lecturechunks' collection. Create this manually in the Atlas UI (Atlas Search -> Create Search Index -> JSON Editor, index type: Vector Search) or via the Atlas Admin API. Do NOT create it from application code. numDimensions (3072) must match EMBEDDING_DIMENSIONS in Backend/services/ai/providers/geminiProvider.js (gemini-embedding-001 default output size). Suggested index name: 'lecture_chunk_vector_index'.",
+  "fields": [
+    {
+      "type": "vector",
+      "path": "embedding",
+      "numDimensions": 3072,
+      "similarity": "cosine"
+    },
+    {
+      "type": "filter",
+      "path": "courseId"
+    },
+    {
+      "type": "filter",
+      "path": "lectureId"
+    }
+  ]
+}
