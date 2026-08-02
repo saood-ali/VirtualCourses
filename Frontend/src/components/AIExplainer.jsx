@@ -19,7 +19,7 @@ const AIExplainer = ({ lectureId, videoRef }) => {
     setAnswer(""); // Clear previous answer
 
     loadingTimerRef.current = setTimeout(() => {
-      setAnswer("First-time analysis: Listening to the lecture audio... This can take ~15-20 seconds for the first request.");
+      setAnswer("Analyzing the lecture to prepare your answer. This may take a few moments...");
     }, 3000);
 
     try {
