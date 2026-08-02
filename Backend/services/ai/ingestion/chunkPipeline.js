@@ -6,14 +6,15 @@ import { cleanTranscript } from "./transcriptionService.js";
 import { segmentTranscript } from "./sentenceSplitter.js";
 import { chunkSentences } from "./semanticChunker.js";
 import { estimateTokens } from "./tokenEstimator.js";
+import { extractKeywords } from "./keywordExtractor.js";
 
 /**
  * Deterministic semantic chunking pipeline for a single lecture.
  * Transcript -> normalize -> sentence split -> semantic chunk -> LectureChunk docs.
  *
  * Idempotent: existing chunks for the lecture are deleted before re-inserting.
- * No LLM, no embeddings, no keyword generation. Timestamps are 0 (plain-text
- * transcript has no timing information).
+ * No LLM, no embeddings. Keywords are extracted deterministically.
+ * Timestamps are 0 (plain-text transcript has no timing information).
  *
  * Lifecycle: (transcript READY) -> CHUNKING -> READY | FAILED
  *
@@ -70,14 +71,16 @@ export const chunkLecture = async (lectureId) => {
       return { chunkCount: 0 };
     }
 
-    // Step 5: build LectureChunk documents. keywords/embedding left empty;
-    // timestamps set to 0 (no timing data in a plain-text transcript).
+    // Step 5: build LectureChunk documents. Keywords are extracted
+    // deterministically (term-frequency ranking, no AI); embeddings are added
+    // by a later stage; timestamps stay 0 (no timing data in a plain-text
+    // transcript).
     const docs = chunks.map((chunk, index) => ({
       lectureId: lecture._id,
       courseId: course._id,
       chunkIndex: index,
       text: chunk.text,
-      keywords: [],
+      keywords: extractKeywords(chunk.text),
       startTimestamp: 0,
       endTimestamp: 0,
       duration: 0,
