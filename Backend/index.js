@@ -13,6 +13,7 @@ import reviewRouter from "./routes/reviewRoute.js";
 import uploadRouter from "./routes/uploadRoute.js";
 import { setupSocket } from "./config/socketHandler.js";
 import liveclassRouter from "./routes/liveclassRoute.js";
+import chatRouter from "./routes/chatRoute.js";
 
 dotenv.config({ quiet: true });
 
@@ -55,6 +56,7 @@ app.use("/api/order", paymentRouter);
 app.use("/api/review", reviewRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/live", liveclassRouter);
+app.use("/api/chat", chatRouter);
 
 app.get("/", (req, res) => {
     res.send("Server is running!");
