@@ -1,171 +1,83 @@
+<div align="center">
+
 # AI Pipeline
 
-> Part of the [VirtualCourses](../README.md) documentation. See also:
-> [Architecture](ARCHITECTURE.md) · [Performance](PERFORMANCE.md) · [API Reference](API.md) · [Security](SECURITY.md) · [Limitations & Roadmap](ROADMAP.md)
+### How lecture video becomes queryable knowledge — and how questions become grounded answers.
 
-Everything the platform does with Gemini, MongoDB Atlas Vector Search, and tiktoken: the provider layer, the ingestion pipeline that turns a video into retrievable knowledge, the retrieval-and-generation path that answers a student's question, the cheap-path course search, the retrieval data model, and the fallback behaviour at every AI boundary.
+**[README](../README.md)** · **[Features](FEATURES.md)** · **[Architecture](ARCHITECTURE.md)**
 
----
-
-## 📑 Contents
-
-[Models and the provider layer](#models-and-the-provider-layer) · [Ingestion](#ingestion--video-to-retrievable-knowledge) · [Retrieval and generation](#retrieval-and-generation--per-student-question) · [Search pipeline](#search-pipeline--cheap-path-first) · [Data model for retrieval](#data-model-for-retrieval) · [Resilience](#resilience)
+</div>
 
 ---
 
-## Models and the provider layer
+## Models and the Provider Layer
 
 All Gemini access is centralized in [geminiProvider.js](../Backend/services/ai/providers/geminiProvider.js), which exports one shared client, one file manager, and the frozen embedding constants.
 
 | Concern | Model | Configuration |
 | :--- | :--- | :--- |
-| **Transcription** | `GEMINI_MODEL` (env) | Gemini File API upload → bounded polling → verbatim-transcription prompt |
+| **Transcription** | `GEMINI_MODEL` (env) | Gemini File API upload → bounded polling → verbatim prompt |
 | **Embeddings** | `gemini-embedding-001` | **Hardcoded constant.** 3072 dimensions, batched 100 per request |
 | **Reranking** | `GEMINI_MODEL` (env) | `temperature: 0`, `responseSchema`-constrained JSON |
 | **Answer generation** | `GEMINI_MODEL` (env) | `temperature: 0`, JSON schema, context-restricted system prompt |
 | **Search classification** | `GEMINI_MODEL` (env) | Constrained to a fixed category taxonomy, not free text |
 
 > [!IMPORTANT]
-> `EMBEDDING_MODEL` and `EMBEDDING_DIMENSIONS = 3072` are **deliberately code constants rather than environment variables.** Vectors from different models are not comparable, and the Atlas index declares a fixed `numDimensions`. Changing either through config would produce silently meaningless search results with no runtime error. As constants, the change is forced through review and the required migration — re-embed everything, recreate the index — is explicit.
+> `EMBEDDING_MODEL` and `EMBEDDING_DIMENSIONS = 3072` are **code constants, not environment variables.** Vectors from different models are not comparable and the Atlas index declares a fixed `numDimensions`, so changing either through config would produce silently meaningless results with no runtime error. As constants, the required migration — re-embed everything, recreate the index — is forced through review.
 
 ---
 
-## Ingestion — video to retrievable knowledge
+## Ingestion — Video to Retrievable Knowledge
 
 Background, fire-and-forget, idempotent. Orchestrated by [lecturePipeline.js](../Backend/services/ai/ingestion/lecturePipeline.js), which sequences the stages and owns the `READY` transition.
 
 ```
-     video attached
-           │
-           ▼
-   ┌───────────────┐
-   │   UPLOADED    │  API responds immediately — pipeline triggered without await
-   └───────┬───────┘
-           ▼
-   ┌───────────────┐   stream to temp file → Gemini File API → poll until processed
-   │ TRANSCRIBING  │   → verbatim transcript.  Existing transcripts never regenerated.
-   └───────┬───────┘   temp file removed in `finally`; remote Gemini file deleted
-           ▼
-   ┌───────────────┐   deterministic normalize → sentence split (abbreviation-safe)
-   │   CHUNKING    │   → ~500-token chunks, 650 hard ceiling, 50-token overlap
-   └───────┬───────┘   → top-15 term-frequency keywords per chunk.  NO LLM.
-           ▼
-   ┌───────────────┐   gemini-embedding-001 · 3072 dims · batches of 100
-   │  EMBEDDING    │   → single bulkWrite.  Fully embedded lectures skipped.
-   └───────┬───────┘
-           ▼
-   ┌───────────────┐   probe Atlas with one of THIS lecture's own embeddings,
-   │   INDEXING    │   scoped to its own lectureId, until the index serves it
-   └───────┬───────┘
-           ▼
-   ┌───────────────┐   provably searchable.  On probe timeout, still READY —
-   │     READY     │   keyword retrieval works — and the UI reads the real
-   └───────────────┘   state from status + chunkCount.        (or → FAILED)
+UPLOADED  →  TRANSCRIBING  →  CHUNKING  →  EMBEDDING  →  INDEXING  →  READY
+                                                                   (or FAILED)
 ```
 
-**Stage detail:**
-
-1. **Trigger** — on video attach the lecture is marked `UPLOADED` and the pipeline is invoked without blocking the API response.
-2. **Transcription** — the video is streamed to a temp file, uploaded to Gemini's File API, polled until processed (`GEMINI_MAX_POLL_ATTEMPTS`, default 60 × 2 s ≈ 2 min), and transcribed with a verbatim-transcription prompt. Existing transcripts are never regenerated. Temp files are removed in a `finally` block and the remote Gemini file is deleted afterward.
-3. **Cleaning & segmentation** — the transcript is deterministically normalized, then split into sentences by a custom splitter that preserves abbreviations, decimals, and dotted code syntax (`Node.js`, `array.map`, `Ph.D.`, `3.14`), tagging paragraph breaks and heading-like lines as topic boundaries.
-4. **Semantic chunking** — deterministic, no LLM. Chunks target ~500 tokens (hard ceiling 650, minimum 250), never split mid-sentence, and carry ~50 tokens of whole-sentence overlap into the next chunk so retrieval never loses context at a seam. Tiny tails are merged into the previous chunk. Token counts come from real `cl100k_base` tiktoken encoding, with a cached encoder.
-5. **Keyword extraction** — pure term-frequency ranking over the shared tokenizer, with a stopword list tuned for lecture filler ("okay", "basically"). The top 15 keywords per chunk are stored to power the lexical retrieval arm.
-6. **Embedding** — each chunk is embedded with `gemini-embedding-001` (3072 dims) in batches of 100 and written with a single `bulkWrite`. Idempotent: chunks already carrying a correctly-sized vector are skipped, so re-running after a partial failure costs nothing for completed work.
-7. **Index readiness** — `INDEXING` polls Atlas with one of the lecture's own embeddings, scoped to its own `lectureId`, until the vector index serves it, then sets `READY`. If the index never responds within `ATLAS_INDEX_TIMEOUT_MS` (default 90 s), the lecture is still marked `READY` — keyword search works — and the UI knows the true state via `chunkCount`/status.
+| Stage | What happens |
+| :--- | :--- |
+| **Trigger** | On video attach the lecture is marked `UPLOADED` and the pipeline is invoked **without blocking the API response**. |
+| **Transcription** | Video is streamed to a temp file, uploaded to Gemini's File API, polled until processed (`GEMINI_MAX_POLL_ATTEMPTS`, default 60 × 2 s ≈ 2 min), and transcribed with a verbatim prompt. **Existing transcripts are never regenerated.** Temp files are removed in `finally`; the remote Gemini file is deleted afterward. |
+| **Chunking** | **No LLM.** The transcript is deterministically normalized, then split by a custom sentence splitter preserving abbreviations, decimals, and dotted code syntax (`Node.js`, `array.map`, `Ph.D.`, `3.14`). Chunks target ~500 tokens (ceiling 650, minimum 250), never split mid-sentence, and carry ~50 tokens of whole-sentence overlap forward. Counts come from real `cl100k_base` tiktoken encoding with a cached encoder. Top-15 term-frequency keywords per chunk power the lexical arm, using a stopword list tuned for lecture filler. |
+| **Embedding** | Each chunk is embedded with `gemini-embedding-001` (3072 dims) in **batches of 100**, written with a single `bulkWrite`. Idempotent — chunks already carrying a correctly-sized vector are skipped. |
+| **Indexing** | Polls Atlas with one of the lecture's **own** embeddings, scoped to its own `lectureId`, until the index serves it — then sets `READY`. On timeout (`ATLAS_INDEX_TIMEOUT_MS`, default 90 s) the lecture is still marked `READY` — keyword search works — and the UI reads true state from `status` / `chunkCount`. |
 
 ---
 
-## Retrieval and generation — per student question
+## Retrieval and Generation — Per Student Question
 
-**Exactly two Gemini calls per question.** Everything else is deterministic.
+**Exactly two Gemini calls per question.** Everything else — normalization, retrieval, fusion, source mapping — is deterministic.
 
 ```
-  "why does useEffect run twice?"
-              │
-              ▼
-   ┌──────────────────────┐
-   │  1. NORMALIZE        │  whitespace-normalize · extract keyword terms
-   │                      │  through the SHARED tokenizer (capped at 24)
-   └──────────┬───────────┘
-              ▼
-   ┌──────────────────────┐
-   │  2. EMBED QUERY      │  same model as the chunks — non-negotiable
-   └──────────┬───────────┘
-              │
-      ┌───────┴────────┐   ← concurrent (Promise.all)
-      ▼                ▼
-┌───────────────┐ ┌───────────────┐
-│ 3a. VECTOR    │ │ 3b. KEYWORD   │
-│ $vectorSearch │ │ $in over      │
-│ cosine        │ │ stored        │
-│ numCandidates │ │ keywords,     │
-│  = 10 × limit │ │ scored by     │
-│ lectureId /   │ │ distinct term │
-│ courseId as   │ │ matches,      │
-│ index FILTERS │ │ deterministic │
-│ embedding     │ │ ordering      │
-│ EXCLUDED from │ │               │
-│ projection    │ │               │
-└───────┬───────┘ └───────┬───────┘
-        └────────┬────────┘
-                 ▼
-      ┌────────────────────────┐
-      │  4. RRF FUSION         │  score = Σ 1/(60 + rank)
-      │     k = 60 → top 12    │  merges by RANK — no score normalization
-      └──────────┬─────────────┘
-                 ▼
-      ┌────────────────────────┐
-      │  5. GEMINI RERANK      │  ⟵ LLM call #1
-      │     12 → 4             │  temperature 0 · responseSchema
-      └──────────┬─────────────┘  indices validated · fails → retrieval order
-                 ▼
-      ┌────────────────────────┐
-      │  6. GEMINI GENERATE    │  ⟵ LLM call #2
-      │  { answer,             │  context-restricted system prompt
-      │    usedIndices }       │  temperature 0 · JSON schema
-      └──────────┬─────────────┘  fails → "not enough information"
-                 ▼
-      ┌────────────────────────┐
-      │  7. SOURCE MAPPING     │  timestamps read from chunk DOCUMENTS —
-      │                        │  never inferred by the model.
-      └──────────┬─────────────┘  out-of-range indices dropped
-                 ▼
-         { answer, sources }      no embeddings · no scores · no internals
+question → normalize → embed → ┌─ vector search ─┐ → RRF (k=60) → rerank → generate → map sources
+                               └─ keyword search ┘    top 12       12→4      LLM #2     server-side
+                                    concurrent                     LLM #1
 ```
 
-**Step detail:**
-
-1. **Normalize** — the question is whitespace-normalized; keyword terms are extracted through the shared tokenizer and capped at 24 terms.
-2. **Embed** — the query is embedded with the same model used for the chunks.
-3. **Dual retrieval** — vector search (`$vectorSearch`, `numCandidates` = 10 × limit, cosine, with `lectureId`/`courseId` applied as Atlas `filter`s) and keyword search (`$in` over stored keywords, scored by distinct term matches, deterministically ordered) run concurrently.
-4. **Fusion** — Reciprocal Rank Fusion (`k = 60`) merges the two lists by rank into the top 12 chunks; scores never need normalization across modalities.
-5. **Rerank** — one Gemini call ranks the 12 candidates down to the top 4 (temperature 0, JSON-schema output, indices validated against the candidate list).
-6. **Generate** — one Gemini call with a system prompt restricting answers to the provided context. The model returns answer text plus the indices it used (JSON schema, temperature 0).
-7. **Source mapping** — timestamps are attached from the chunk documents themselves, never inferred by the model. Malformed or out-of-range indices are dropped, so sources can only cite chunks that were actually retrieved.
-8. **Response** — `{ answer, sources }` is returned. No embeddings, raw scores, or internal structures are exposed to the client.
+| Step | What happens |
+| :--- | :--- |
+| **1 · Normalize** | The question is whitespace-normalized; keyword terms are extracted through the **shared tokenizer** and capped at 24. |
+| **2 · Embed** | The query is embedded with **the same model used for the chunks** — non-negotiable. |
+| **3 · Dual retrieval** | Vector search (`$vectorSearch`, cosine, `numCandidates` = 10 × limit, `lectureId`/`courseId` as Atlas `filter`s, `embedding` excluded from projection) and keyword search (`$in` over stored keywords, scored by distinct term matches) run **concurrently**. |
+| **4 · Fusion** | Reciprocal Rank Fusion (`k = 60`) merges both lists **by rank** into the top 12 — scores never need cross-modal normalization. |
+| **5 · Rerank** *(LLM call #1)* | One Gemini call ranks 12 candidates down to 4 at temperature 0 under a JSON schema, indices validated against the candidate list. Failure falls back to retrieval order. |
+| **6 · Generate** *(LLM call #2)* | One Gemini call with a system prompt restricting answers to the provided context, returning `{ answer, usedIndices }`. Failure returns "not enough information". |
+| **7 · Source mapping** | Timestamps are attached **from the chunk documents themselves**, never inferred by the model. Malformed or out-of-range indices are dropped. |
+| **8 · Response** | `{ answer, sources }` is returned. **No embeddings, raw scores, or internal structures reach the client.** |
 
 ---
 
-## Search pipeline — cheap path first
+## Search Pipeline — Cheap Path First
 
-Course search deliberately spends nothing on the common case:
-
-```
-query → regex match across course fields  ──found──▶ return results   (0 tokens)
-              │
-           nothing
-              ▼
-      Gemini classification onto the fixed
-      category taxonomy ──▶ retry DB query
-```
-
-Constraining the classifier to a fixed taxonomy means its output is always something the catalog can match, and never arbitrary text.
+Course search deliberately spends nothing on the common case: a regex match across course fields returns results at **zero tokens**, and only a miss escalates to Gemini classification onto the fixed category taxonomy before retrying the query. Constraining the classifier to that taxonomy means its output is **always something the catalog can match**, never arbitrary text.
 
 ---
 
-## Data model for retrieval
+## Data Model for Retrieval
 
-`LectureChunk` is the retrieval unit — text, vector, and lexical index in one document, so embeddings live in the same store as the text they came from and there is no second database to operate.
+`LectureChunk` is the retrieval unit — **text, vector, and lexical index in one document**, so embeddings live in the same store as the text they came from and there is no second database to operate.
 
 | Field | Type | Purpose |
 | :--- | :--- | :--- |
@@ -175,19 +87,9 @@ Constraining the classifier to a fixed taxonomy means its output is always somet
 | `keywords` | `[String]` | Top 15 terms — the lexical retrieval arm |
 | `embedding` | `[Number]` | 3072-dim vector; **excluded from every retrieval projection** |
 | `tokenCount` | `Number` | Exact tiktoken count for budget accounting |
-| `startTimestamp`, `endTimestamp`, `duration` | `Number` | Reserved — currently `0`, see [Known Limitations](ROADMAP.md#-known-limitations) |
+| `startTimestamp`, `endTimestamp`, `duration` | `Number` | Reserved — currently `0`; per-chunk timing is in the improvement backlog |
 
-**Indexes:** `{ lectureId: 1, chunkIndex: 1 }` for ordered retrieval, `{ courseId: 1 }` for course scoping, plus the Atlas Vector Search index defined in [atlas-vector-index.json](atlas-vector-index.json).
-
-```jsonc
-{
-  "fields": [
-    { "type": "vector", "path": "embedding", "numDimensions": 3072, "similarity": "cosine" },
-    { "type": "filter", "path": "courseId" },
-    { "type": "filter", "path": "lectureId" }
-  ]
-}
-```
+**Indexes** — `{ lectureId: 1, chunkIndex: 1 }` for ordered retrieval, `{ courseId: 1 }` for course scoping, plus the Atlas Vector Search index in [atlas-vector-index.json](atlas-vector-index.json): a `vector` field on `embedding` (3072 dims, cosine) with `filter` fields on `courseId` and `lectureId`.
 
 > [!WARNING]
 > This index is created **manually** in the Atlas UI or Admin API — never from application code. `numDimensions` must stay `3072` to match `EMBEDDING_DIMENSIONS`.
@@ -196,7 +98,7 @@ Constraining the classifier to a fixed taxonomy means its output is always somet
 
 ## Resilience
 
-Every AI boundary has an explicit fallback. No dependency failure returns a 500.
+Every AI boundary has an explicit fallback. **No dependency failure returns a 500.**
 
 | Failure | Fallback |
 | :--- | :--- |
@@ -210,4 +112,8 @@ Every AI boundary has an explicit fallback. No dependency failure returns a 500.
 
 ---
 
-[← Back to the README](../README.md)
+<div align="center">
+
+**[Back to README](../README.md)** · **[Architecture](ARCHITECTURE.md)**
+
+</div>

@@ -12,95 +12,68 @@
 [![Redis](https://img.shields.io/badge/Redis-ioredis-FF4438?logo=redis&logoColor=white)](https://github.com/redis/ioredis)
 [![Gemini](https://img.shields.io/badge/Google-Gemini-4285F4?logo=google&logoColor=white)](https://ai.google.dev)
 [![Socket.io](https://img.shields.io/badge/Socket.io-4-010101?logo=socketdotio&logoColor=white)](https://socket.io)
-[![Tests](https://img.shields.io/badge/integration%20tests-18%20passing-2ea44f)](#-testing)
+
+**[Live](https://virtualcourses.vercel.app)**
 
 </div>
 
 VirtualCourses is a full-stack learning marketplace built around one idea: **the spoken content of a lecture video should be a first-class, queryable data structure — not an opaque blob behind a play button.**
 
-Educators publish and monetize video courses. Students buy them, watch them, and — when they get stuck at 14:32 — ask a question in plain English and get an answer grounded in *that lecture's own transcript*, with the source chunks it was drawn from. Making that work required an automated ingestion pipeline (**transcribe → chunk → embed → index**) and a real retrieval stack: **hybrid vector + keyword search fused with Reciprocal Rank Fusion, a Gemini reranking pass, and schema-constrained answer generation.**
-
-Around that core sits everything a production marketplace needs: JWT auth with Google OAuth, Razorpay enrollment, signed direct-to-CDN video uploads, live classes, a persisted real-time discussion layer, cache-aside Redis that degrades to MongoDB rather than failing, and an integration suite that boots a real `mongod` and real sockets instead of mocking them.
-
-<div align="center">
-
-**[🔗 Live Demo](https://virtualcourses.vercel.app)** · **[🔌 Backend API](https://project-1-c0c5.onrender.com)**
-
-</div>
-
-<!-- > [!NOTE]
-> **Screenshots** — in-repo captures live in [Frontend/src/assets/](Frontend/src/assets/) (`home_page.png`, `about_image.png`, `interactive.png`, `ai_student.png`). Replace this block with a hosted banner for the GitHub social preview. -->
+Educators publish and monetize video courses. Students buy them, watch them, and — when they get stuck at 14:32 — ask a question in plain English and get an answer grounded in *that lecture's own transcript*, with the source chunks it was drawn from. Around that core sits everything a production marketplace needs: JWT auth with Google OAuth, Razorpay enrollment, signed direct-to-CDN uploads, live classes, and a persisted real-time discussion layer.
 
 ---
 
-## 📑 Contents
+## Why This Project Exists
 
-[Why This Exists](#-why-this-project-exists) · [Architecture](#-architecture-overview) · [AI Architecture](#-ai-architecture) · [Features](#-features) · [Tech Stack](#-tech-stack) · [Performance](#-performance) · [Testing](#-testing) · [Installation](#-installation) · [Environment Variables](#-environment-variables) · [API](#-api-overview) · [Security](#-security) · [Project Structure](#-project-structure) · [Documentation](#-documentation) · [Limitations & Roadmap](#-limitations--roadmap) · [Contributing](#-contributing) · [License](#-license) · [Author](#-author)
+### The problem
 
----
+**Every course platform stores its most valuable asset in its least usable form.**
 
-## 🎯 Why This Project Exists
+A 40-minute lecture contains the exact explanation a student needs. As an MP4, it is opaque — it cannot be searched, quoted, filtered, or reasoned over. So when a student stalls at 14:32 on *why does `useEffect` run twice*, the platform's entire answer is a scrub bar and a guess.
 
-Eleven real constraints shaped this codebase. In brief:
+What happens next is the real cost. The student leaves — for a search engine, a forum, or a general-purpose chatbot that has never seen the lecture and answers from the open internet rather than from what their instructor actually taught. The answer they needed was in the course they already paid for. The platform simply had no way to reach it.
 
-| # | Problem | Design response |
-| :-: | :--- | :--- |
-| 1 | Video lectures are unstructured data | Automated **transcribe → chunk → embed → index** ingestion pipeline |
-| 2 | Traditional search can't read learning intent | Regex first, Gemini taxonomy classification only on a miss |
-| 3 | Pure vector search is confidently wrong on exact terms | **Hybrid retrieval** fused by Reciprocal Rank Fusion |
-| 4 | Retrieval alone is not precision | A dedicated **Gemini reranking pass** (12 → 4) |
-| 5 | An LLM will cite a timestamp it invented | The model returns **indices only**; sources are attached server-side |
-| 6 | "Ready" that isn't searchable is a silent failure | An `INDEXING` probe queries the live index before `READY` |
-| 7 | Transcription takes minutes; HTTP requests don't | Fire-and-forget ingestion, idempotent stages, polled status |
-| 8 | Repeated reads of near-static data waste latency | Cache-aside Redis, **optional**, degrades to MongoDB |
-| 9 | Chat that forgets everything isn't a discussion | Persist before broadcast; cursor-paginated history |
-| 10 | Client-trusted identity and pricing are not security | Server-stamped socket identity; DB-priced, re-verified payments |
-| 11 | Rich interfaces shouldn't tax the API | Signed **direct-to-CDN** uploads; video never touches Node |
+Bolting a chatbot onto the player does not fix this. Doing it honestly means surviving three failure modes that quietly ruin naive implementations:
 
-📖 **The full reasoning behind each one:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#-why-this-project-exists)
+- **Semantic search alone is confidently wrong.** Embeddings capture meaning but blur specifics — ask about `useEffect` and cosine similarity cheerfully returns a passage about lifecycle methods in general. Close, and useless.
+- **An LLM will invent its citations.** Ask a model for the timestamp it drew from and it will produce a plausible one whether or not that moment exists. An unverifiable citation is worse than none — it is a wrong answer wearing evidence.
+- **"Ready" that isn't searchable is a silent failure.** Transcription takes minutes and vector indexes build asynchronously. Marking a lecture ready too early yields the worst bug available: a UI that says *ready*, a search that returns nothing, and no error anywhere.
 
----
+### How VirtualCourses solves it
 
-## 🏗 Architecture Overview
+The platform treats **the spoken content of a lecture as a first-class, queryable data structure** rather than a blob behind a play button — and it enforces that end to end.
 
-```
-┌───────────────────────────────────────────────────────────────────────┐
-│  CLIENT — React 19 SPA (Vercel)                                       │
-│  Redux Toolkit · React Router 7 · Tailwind v4 · axiosClient           │
-└──┬──────────────────┬──────────────────┬───────────────┬──────────────┘
-   │ REST (JWT)       │ Socket.io (JWT)  │ direct upload │ WebRTC
-   ▼                  ▼                  ▼               ▼
-┌────────────────────────────────┐  ┌────────────┐  ┌────────────┐
-│  API — Express 5 (ESM)         │  │ Cloudinary │  │ ZegoCloud  │
-│  routes → controllers →        │  │ CDN+store  │  │ live rooms │
-│  services · isAuth middleware  │  └────────────┘  └────────────┘
-│  Socket.io server (rooms)      │
-└──┬──────────┬──────────┬───────┘
-   │          │          │
-   ▼          ▼          ▼
-┌────────┐ ┌───────┐ ┌────────────────────────────────────────┐
-│ Mongo  │ │ Redis │ │  Google Gemini                         │
-│ Atlas  │ │ cache │ │  • File API      → transcription       │
-│ + Vec  │ │ (opt) │ │  • embedContent  → 3072-dim vectors    │
-│ Search │ │       │ │  • generateContent → rerank + answer   │
-└────────┘ └───────┘ └────────────────────────────────────────┘
-              ┌────────────┐  ┌────────────┐  ┌────────────┐
-              │  Razorpay  │  │   Brevo    │  │  Firebase  │
-              │  payments  │  │  OTP mail  │  │   OAuth    │
-              └────────────┘  └────────────┘  └────────────┘
-```
+**1 · Every video becomes a knowledge base, automatically.** On upload, a background pipeline runs **transcribe → chunk → embed → index**: Gemini File API transcription, deterministic sentence-aware chunking on real `cl100k_base` token counts, 3072-dimensional embeddings, and an Atlas Vector Search index. No manual step, no educator effort.
 
-Every subsystem gets a problem → solution → design → impact write-up in the architecture document: hybrid RAG, LLM reranking, verifiable source attribution, deterministic ingestion, provable index readiness, cache-aside Redis, persisted real-time discussion, server-verified payments, signed CDN streaming, dual-path authentication, polling-over-sockets live classes, GPU-accelerated UI, and Redux state boundaries.
+**2 · Retrieval is hybrid, so it is right about both meaning and literals.** Vector search and deterministic keyword search run concurrently and are fused by **Reciprocal Rank Fusion** — merging by *rank* rather than score, so two incomparable scoring systems combine with no normalization hack. A dedicated Gemini reranking pass then cuts 12 candidates to the 4 that actually answer the question.
 
-📖 **Subsystem deep dives and technical highlights:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+**3 · Citations are structurally verifiable.** The model never emits a timestamp. It returns **indices only**, into the exact candidate set it was handed; the server maps those back to chunk documents and reads timestamps from the documents themselves. Out-of-range indices are dropped. **A citation can only ever point at a chunk that was genuinely retrieved.**
+
+**4 · Status means what it says.** An `INDEXING` stage probes the live index with one of the lecture's *own* embeddings, scoped to its own `lectureId`, and only sets `READY` once Atlas actually serves that vector back. Ingestion is fire-and-forget and every stage is idempotent, so a partial run is always safe to re-run while the client polls a deliberately uncached status endpoint.
+
+The result: a student stuck at 14:32 asks in plain English and gets an answer grounded in *that lecture's own transcript*, with the source chunks it came from — at a cost of **exactly two Gemini calls per question**, because retrieval, fusion, chunking, and keyword extraction are all deterministic.
+
+Around that core sits the rest of a real marketplace — auth, payments, uploads, live classes, discussion — where the same principle applies: **identity, pricing, and readiness are established server-side, never taken on the client's word.**
+
+**The eleven constraints that shaped the codebase, each with its full reasoning:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#why-this-project-exists)
 
 ---
 
-## 🤖 AI Architecture
+## Architecture
 
-The AI layer turns each uploaded video into a retrievable knowledge base and answers lecture-scoped questions from it. Ingestion runs in the background — transcription via the Gemini File API, deterministic sentence-aware chunking on real `cl100k_base` token counts, 3072-dimensional embeddings written in batches, and an index-readiness probe that only sets `READY` once Atlas actually serves the lecture's own vector back. Every stage is idempotent, so a partial run is always safe to re-run.
+A React 19 SPA on Vercel talks to an Express 5 (ESM) API on Render over REST and Socket.io, both JWT-authenticated. Video bypasses the API entirely — the client uploads straight to Cloudinary with a server-signed request — and live classes run peer-to-peer through ZegoCloud.
 
-At query time the platform spends **exactly two Gemini calls per question**. Vector and keyword search run concurrently and are fused by Reciprocal Rank Fusion (`k = 60`) into 12 candidates; one Gemini call reranks those to 4; one more generates a schema-constrained `{ answer, usedIndices }`. Timestamps and identifiers are attached server-side from the chunk documents, so **a citation can only ever point at a chunk that was genuinely retrieved.** Every AI boundary has an explicit fallback — no dependency failure returns a 500.
+The API layer is `routes → controllers → services`. MongoDB Atlas stores documents *and* 3072-dimensional vectors in one place via Vector Search. Redis is cache-aside and **optional**: if it is absent or unreachable, reads fall through to MongoDB instead of failing. Google Gemini serves three distinct roles — File API transcription, `embedContent` vectors, and `generateContent` for reranking and answer generation. Razorpay handles payments, Brevo sends OTP mail over HTTP, and Firebase provides the Google OAuth popup only.
+
+**Runtime topology and thirteen subsystem deep dives:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+
+---
+
+## AI Architecture
+
+Ingestion runs in the background: transcription via the Gemini File API, deterministic sentence-aware chunking on real `cl100k_base` token counts, 3072-dimensional embeddings written in batches, and an index-readiness probe that only sets `READY` once Atlas serves the lecture's own vector back. Every stage is idempotent.
+
+At query time the platform spends **exactly two Gemini calls per question**. Vector and keyword search run concurrently and are fused by Reciprocal Rank Fusion (`k = 60`) into 12 candidates; one call reranks those to 4, one more generates a schema-constrained `{ answer, usedIndices }`. Timestamps are attached server-side from the chunk documents. Every AI boundary has an explicit fallback — no dependency failure returns a 500.
 
 | Concern | Model | Configuration |
 | :--- | :--- | :--- |
@@ -110,141 +83,47 @@ At query time the platform spends **exactly two Gemini calls per question**. Vec
 | **Answer generation** | `GEMINI_MODEL` (env) | `temperature: 0`, JSON schema, context-restricted system prompt |
 | **Search classification** | `GEMINI_MODEL` (env) | Constrained to a fixed category taxonomy, not free text |
 
-
-📖 **Complete implementation** — stage-by-stage ingestion, the retrieval/generation flow diagram, search pipeline, `LectureChunk` data model, and the resilience matrix: **[docs/AI_PIPELINE.md](docs/AI_PIPELINE.md)**
-
----
-
-## ✨ Features
-
-### 🤖 AI
-
-| Feature | Description |
-| :--- | :--- |
-| **In-lecture AI tutor** | An "Ask AI to Explain" panel inside the player ([AIExplainer.jsx](Frontend/src/components/AIExplainer.jsx)) answers questions grounded in the specific lecture's transcript, with sources. Handles "still processing" and "not in this lecture" explicitly rather than guessing. |
-| **Hybrid RAG retrieval** | Vector + keyword search fused by RRF, Gemini-reranked, with verifiable source attribution. |
-| **Natural-language course search** | [SearchWithAi](Frontend/src/pages/SearchWithAi.jsx) maps free-text intent onto the platform taxonomy — regex first, Gemini only on miss. |
-| **Automated transcription** | Every uploaded video is transcribed in the background with no manual step. |
-| **Processing checklist UI** | Educators watch transcribe → chunk → embed → index progress via a polled, uncached status endpoint with server-driven stage order. |
-
-### 🎓 Student
-
-| Feature | Description |
-| :--- | :--- |
-| **Course player** | Native `<video>` with YouTube-style shortcuts (`k`/`space`, `j`/`l`, arrows, `f`, `m`, `p`), Picture-in-Picture, and auto-advance to the next unlocked lecture. |
-| **Resume playback** | Per-lecture position persisted to `localStorage` — no server round trip. |
-| **Enrollment & library** | Paid enrollment via verified payment; enrolled courses listed on the dashboard. |
-| **Reviews & ratings** | One 1–5 review per user per course, listed with user and course populated. |
-| **Free previews** | Educator-flagged preview lectures playable before purchase. |
-
-### 🎨 Educator
-
-| Feature | Description |
-| :--- | :--- |
-| **Course & lecture management** | Full CRUD over courses and lectures — pricing, level, category, publish state. |
-| **Direct-to-CDN uploads** | Signed Cloudinary uploads with a real progress bar; video never touches the API. |
-| **Analytics dashboard** | Earnings (`price × enrolled`), student counts, and published-course totals with Recharts distributions — derived from existing Redux state, so no analytics endpoint is needed at this scale. |
-| **Live class hosting** | Host role in the ZegoUIKit room; join/leave toggles the course's live flag. |
-
-### 📡 Real-time
-
-| Feature | Description |
-| :--- | :--- |
-| **Course discussion** | Persisted Socket.io chat per course, open to enrolled students and the course educator. Transcript survives reload; late joiners see prior messages; older messages page in on demand. Educator messages are badged. |
-| **Typing indicators** | Relayed to everyone in the room except the sender; never stored. |
-| **Presence** | Live online-member list, deduplicated per user, emitted on join, leave, and disconnect. |
-| **Live classes** | ZegoUIKit rooms with host/audience roles and persistent live state, surfaced as a badge via a 30 s poll. |
-
-### 🔐 Authentication
-
-| Feature | Description |
-| :--- | :--- |
-| **Email/password** | bcrypt hashing (cost 10), JWT in `httpOnly` cookie **and** Bearer header. |
-| **Google OAuth** | Firebase popup exchanged for the application's own JWT. |
-| **OTP password reset** | 4-digit OTP, 5-minute Redis TTL with MongoDB fallback, delivered via Brevo. Two-step: reset refuses unless `isOtpVerified`. |
-| **Role-based routing** | `student` / `educator` guards on both client routes and API mutations. |
-
-### 💳 Payments & Media
-
-| Feature | Description |
-| :--- | :--- |
-| **Razorpay enrollment** | Server-side order creation from the database price, re-verified against Razorpay before enrollment. |
-| **Cache invalidation on purchase** | Enrolling invalidates the user profile, educator stats, and course page in one call. |
-| **Cloudinary media** | Signed direct upload for video, server-proxied multipart for images, CDN delivery, old-image cleanup on profile update. |
+**Stage-by-stage ingestion, retrieval flow, data model, and resilience matrix:** [docs/AI_PIPELINE.md](docs/AI_PIPELINE.md)
 
 ---
 
-## 🛠 Tech Stack
+## Key Features
 
-**Frontend** — React 19 · Vite 7 · Tailwind CSS 4 · Redux Toolkit + React-Redux · React Router 7
+### AI-Grounded Learning
+- **In-Lecture AI Tutor:** Ask a question mid-video and get an answer drawn from that lecture's transcript, with verifiable source citations.
+- **Hybrid RAG Retrieval:** Vector + keyword search fused by Reciprocal Rank Fusion, then Gemini-reranked for precision.
+- **Automated Transcription:** Every upload is transcribed, chunked, embedded, and indexed in the background — zero educator effort.
+- **Natural-Language Course Search:** Free-text intent mapped onto the platform taxonomy; regex first, Gemini only on miss.
 
-| Library | Used for |
-| :--- | :--- |
-| **Axios** | One configured instance with `withCredentials` and a token interceptor. |
-| **Socket.io client** | Course discussion transport. |
-| **Firebase (Web SDK)** | Google OAuth popup only; the app issues its own JWT. |
-| **ZegoCloud UIKit Prebuilt** | Drop-in live classroom — no hand-rolled WebRTC signaling or TURN. |
-| **Recharts** | SVG charts for the educator analytics dashboard. |
-| **React Player** | Media preview in the lecture editor. |
-| **Motion** (`motion/react`) · **OGL** | Layout/scroll animation; single-shader `Iridescence` background. |
-| **Lucide React** · React Icons · React Toastify · React Spinners | Icons, notifications, loading states. |
-| **clsx** + **tailwind-merge** | Conditional classes without duplicate-utility conflicts. |
-| **ESLint 9** | Flat config with React Hooks and Refresh rules. |
+### Marketplace & Classroom
+- **Course Player:** Native video with YouTube-style shortcuts, Picture-in-Picture, resume playback, and auto-advance.
+- **Educator Studio:** Full course/lecture CRUD, signed direct-to-CDN uploads with progress, and a Recharts analytics dashboard.
+- **Enrollment & Payments:** Razorpay orders created from the database price and re-verified server-side before access is granted.
+- **Live Classes:** ZegoUIKit rooms with host/audience roles and a persistent live badge.
 
-**Backend** — Node.js 20+ (ESM) · Express 5 · Mongoose 9 · Socket.io 4
+### Real-Time & Platform
+- **Persisted Course Discussion:** Socket.io chat that survives reload, pages in history, and badges educator messages.
+- **Presence & Typing Indicators:** Deduplicated online-member lists; typing relayed to everyone but the sender.
+- **Secure Authentication:** JWT over `httpOnly` cookies, Google OAuth via Firebase, and OTP password reset with Redis TTL.
+- **Graceful Degradation:** Cache-aside Redis is optional — the platform falls back to MongoDB rather than failing.
 
-| Library | Used for |
-| :--- | :--- |
-| **jsonwebtoken** + **bcrypt** | Stateless auth; password hashing at cost 10. |
-| **Multer** + multer-storage-cloudinary | Server-proxied image multipart with format allowlisting. |
-| **validator** · **otp-generator** | Email validation at signup; 4-digit reset OTPs. |
-| **cors** · **cookie-parser** · **dotenv** · **nodemon** | Credentialed CORS, `httpOnly` cookies, config, dev restart. |
-
-**AI & data**
-
-| Technology | Used for |
-| :--- | :--- |
-| **@google/generative-ai** | One SDK for transcription (File API), reranking, generation, and batch embeddings. |
-| **`gemini-embedding-001`** | 3072-dim embeddings, **frozen as a code constant** — see [AI Architecture](#-ai-architecture). |
-| **js-tiktoken** | Real `cl100k_base` counts, so chunk boundaries are exact and reproducible. |
-| **MongoDB Atlas + Vector Search** | Documents and 3072-dim cosine ANN in one store, filtered by `lectureId` / `courseId`. |
-| **Redis (ioredis)** | Cache-aside reads and OTP TTLs — **optional**, degrades to MongoDB rather than crashing. |
-
-**Services & hosting** — **Cloudinary** (signed direct-to-CDN uploads, media delivery) · **Razorpay** (server-created, re-verified payments) · **Brevo** (transactional email over HTTP, since PaaS hosts block SMTP) · **Firebase Auth** (Google OAuth) · **ZegoCloud** (live classes) · **Vercel** (frontend) · **Render** (API)
+**Every feature in full detail, with source links:** [docs/FEATURES.md](docs/FEATURES.md)
 
 ---
 
+## Tech Stack
 
-<!-- ## 🧪 Testing
-
-The course-discussion surface has an **18-test integration suite** on the Node.js built-in test runner. It boots a throwaway `mongod` on a free port, mounts the real chat route, starts the real Socket.io server, and drives it with real `socket.io-client` connections.
-
-**Nothing is mocked or stubbed — so a pass means the persistence path actually works end to end.**
-
-```bash
-cd Backend
-npm test        # node --test "tests/**/*.test.js"
-```
-
-Requires a local `mongod` binary on `PATH`; the suite spawns and tears down its own instance in a temp dir, so **your real database is never touched**. `JWT_SECRET` defaults to a test value if unset.
-
-**Coverage:**
-
-| Area | What is verified |
+| Domain | Technologies |
 | :--- | :--- |
-| **Persistence** | Messages survive a reload; late joiners see prior history. |
-| **Pagination** | Cursor paging and correct `hasMore` derivation. |
-| **Authorization** | The 401/403/400 paths, including non-enrolled access. |
-| **Identity spoofing** | A forged sender payload is overridden by socket identity. |
-| **Input limits** | Over-long messages are rejected. |
-| **Fan-out** | Broadcast reaches the whole room, including the sender. |
-| **Presence** | Join, leave, disconnect — and the two-tabs-one-user case. |
-| **Typing** | Relay excludes the sender. |
-| **Failure path** | On a write failure, **nothing is broadcast** and the sender gets `chat_error`. |
+| **Frontend** | React 19, Vite 7, Tailwind CSS 4, Redux Toolkit, React Router 7, Motion, OGL, Recharts, Axios |
+| **Backend** | Node.js 20 (ESM), Express 5, Mongoose 9, Socket.io 4, JWT, bcrypt, Multer |
+| **AI & Data** | Google Gemini (`@google/generative-ai`), `gemini-embedding-001`, js-tiktoken, MongoDB Atlas Vector Search, Redis (ioredis) |
+| **Services** | Cloudinary (signed CDN uploads), Razorpay (payments), Brevo (email), Firebase Auth (OAuth), ZegoCloud (live classes) |
+| **DevOps & Testing** | Vercel (frontend), Render (API), Node.js built-in test runner, real `mongod` + Socket.io integration suite |
 
---- -->
+---
 
-## 🚀 Installation
+## Quick Start
 
 ### Prerequisites
 
@@ -253,161 +132,85 @@ Requires a local `mongod` binary on `PATH`; the suite spawns and tears down its 
 - **Redis** *(optional — the app runs without it)*
 - API keys for **Gemini**, **Cloudinary**, **Razorpay**, **Brevo**, **Firebase**, and **ZegoCloud**
 
-### Setup
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/saood-ali/VirtualCourses.git
 cd VirtualCourses
-
-# Backend  → http://localhost:8000
-cd Backend
-npm install
-#   create .env — see Environment Variables
-npm run dev            # nodemon · or: npm start
-
-# Frontend → http://localhost:5173
-cd ../Frontend
-npm install
-#   create .env — see Environment Variables
-npm run dev            # or: npm run build · npm run preview · npm run lint
 ```
 
-### Enable Vector Search
+### 2. Configure Backend
+
+Create a `.env` file in the `Backend/` directory:
+
+```env
+PORT=8000
+MONGODB_URL=your_mongodb_atlas_connection_string
+FRONTEND_URL=http://localhost:5173
+JWT_SECRET=your_super_secret_jwt_key
+REDIS_URL=your_redis_url          # optional
+GEMINI_API_KEY=your_google_gemini_api_key
+GEMINI_MODEL=gemini-2.0-flash
+CLOUDINARY_NAME=your_cloudinary_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+RAZORPAY_KEY_ID=your_razorpay_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
+BREVO_API_KEY=your_brevo_api_key
+USER_EMAIL=your_verified_sender_email
+```
+
+```bash
+cd Backend
+npm install
+npm run dev            
+```
+
+### 3. Configure Frontend
+
+Create a `.env` file in the `Frontend/` directory:
+
+```env
+VITE_SERVER_URL=http://localhost:8000
+VITE_RAZORPAY_KEY_ID=your_razorpay_key_id
+VITE_ZEGO_APP_ID=your_zego_app_id
+VITE_ZEGO_SERVER_SECRET=your_zego_server_secret
+VITE_FIREBASE_APIKEY=your_firebase_api_key
+VITE_FIREBASE_AUTHDOMAIN=your_firebase_auth_domain
+VITE_FIREBASE_PROJECTID=your_firebase_project_id
+VITE_FIREBASE_STORAGEBUCKET=your_firebase_storage_bucket
+VITE_FIREBASE_MESSAGINGSENDERID=your_firebase_sender_id
+VITE_FIREBASE_APPID=your_firebase_app_id
+```
+
+```bash
+cd Frontend
+npm install
+npm run dev           
+```
+
+### 4. Enable Vector Search
 
 In Atlas: **Atlas Search → Create Search Index → JSON Editor → Vector Search**, target the `lecturechunks` collection, paste [docs/atlas-vector-index.json](docs/atlas-vector-index.json), and name it `lecture_chunk_vector_index`.
 
-
-<!-- ### Maintenance scripts
-
-```bash
-node scripts/backfillChunkKeywords.js --dry-run     # preview keyword backfill
-node scripts/backfillChunkKeywords.js               # run it
-node scripts/removeVerificationFixture.js --dry-run
-``` -->
-
 ---
 
-<!-- ## 🔑 Environment Variables
-
-### Backend — `Backend/.env`
-
-| Variable | Purpose | Required |
-| :--- | :--- | :---: |
-| `PORT` | HTTP listen port. | ⬜ |
-| `NODE_ENV` | Environment label. | ⬜ |
-| `MONGODB_URL` | MongoDB connection string. The process exits if the connection fails. | ✅ |
-| `FRONTEND_URL` | Deployed frontend origin; added to the Socket.io allowed-origins list. | ✅ |
-| `JWT_SECRET` | Signing/verification key for all JWTs. Use a long random value. | ✅ |
-| `REDIS_URL` | Redis connection URL. **Omit to disable caching** — the app degrades to direct DB reads. | ⬜ |
-| `GEMINI_API_KEY` | Google AI key for transcription, embeddings, reranking, and generation. | ✅ |
-| `GEMINI_MODEL` | Generative model ID. *(Embeddings are pinned in code, not here.)* | ✅ |
-| `CLOUDINARY_NAME` | Cloudinary cloud name. | ✅ |
-| `CLOUDINARY_API_KEY` | Cloudinary API key (returned to clients for signed uploads). | ✅ |
-| `CLOUDINARY_API_SECRET` | Signs upload requests. **Server-only — never expose.** | ✅ |
-| `RAZORPAY_KEY_ID` | Razorpay public key ID. | ✅ |
-| `RAZORPAY_KEY_SECRET` | Order creation and verification. **Server-only.** | ✅ |
-| `BREVO_API_KEY` | Brevo transactional email API key. | ✅ |
-| `MAIL_HOST` | SMTP host (legacy mail path). | ⬜ |
-| `USER_EMAIL` | Verified Brevo sender address for OTP emails. | ✅ |
-| `USER_PASSWORD` | SMTP credential (legacy mail path). | ⬜ |
-| `DEFAULT_COURSE_THUMBNAIL` | Fallback thumbnail URL. | ⬜ |
-
-**Optional AI tunables** — read from `process.env` with sensible defaults:
-
-| Variable | Default | Purpose |
-| :--- | :--- | :--- |
-| `GEMINI_EMBED_BATCH_SIZE` | `100` | Chunks per embedding request. |
-| `GEMINI_MAX_POLL_ATTEMPTS` | `60` | Max 2-second polls for Gemini file processing (~2 min). |
-| `ATLAS_INDEX_TIMEOUT_MS` | `90000` | How long the readiness probe waits before marking `READY` anyway. |
-| `ATLAS_VECTOR_INDEX` | `lecture_chunk_vector_index` | Vector index name. |
-
-### Frontend — `Frontend/.env`
-
-> [!CAUTION]
-> Every `VITE_`-prefixed variable is **compiled into the public client bundle**. Firebase and Razorpay *public* keys are designed for this. `VITE_ZEGO_SERVER_SECRET` is **not** — see [gap #8](docs/SECURITY.md#known-gaps).
-
-| Variable | Purpose | Required |
-| :--- | :--- | :---: |
-| `VITE_SERVER_URL` | Backend base URL for Axios and the Socket.io client. | ✅ |
-| `VITE_RAZORPAY_KEY_ID` | Public Razorpay key for the checkout widget. | ✅ |
-| `VITE_ZEGO_APP_ID` | ZegoCloud application ID. | ✅ |
-| `VITE_ZEGO_SERVER_SECRET` | Zego token generation. ⚠️ **A real secret currently client-side.** | ✅ |
-| `VITE_FIREBASE_APIKEY` | Firebase Web API key (public by design). | ✅ |
-| `VITE_FIREBASE_AUTHDOMAIN` | Firebase auth domain for the OAuth popup. | ✅ |
-| `VITE_FIREBASE_PROJECTID` | Firebase project ID. | ✅ |
-| `VITE_FIREBASE_STORAGEBUCKET` | Firebase storage bucket. | ✅ |
-| `VITE_FIREBASE_MESSAGINGSENDERID` | Firebase messaging sender ID. | ✅ |
-| `VITE_FIREBASE_APPID` | Firebase app ID. | ✅ |
-| `VITE_FIREBASE_MEASUREMENTID` | Firebase Analytics measurement ID. | ⬜ |
-| `VITE_DEFAULT_COURSE_THUMBNAIL` | Client-side fallback thumbnail URL. | ⬜ |
-
---- -->
-
-<!-- ## 📡 API Overview
-
-Base URL `<VITE_SERVER_URL>` · JSON responses · 🔓 public · 🔒 requires `isAuth`
-
-| Method | Endpoint | Description | Auth |
-| :--- | :--- | :--- | :---: |
-| `POST` | `/api/course/explain-lecture` | **AI Tutor.** `{ lectureId, userQuestion }` → `{ answer, sources }` via hybrid RAG → rerank → generate. | 🔒 |
-| `GET` | `/api/course/lecture-status/:lectureId` | **Pipeline progress.** `{ status, stage, stages, message, chunkCount }`. Uncached by design — polled every 3 s. | 🔒 |
-| `POST` | `/api/course/search` | **AI course search.** `{ input }` → matching published courses. Regex first, Gemini classification on miss. | 🔒 |
-
-Auth, user, course/lecture CRUD, payments, reviews, uploads, live sessions, cursor-paginated chat history, and the full Socket.io event contract are documented in the API reference.
-
-📖 **Full endpoint and event reference:** [docs/API.md](docs/API.md)
-
----
-
-## 🔒 Security
-
-Implemented: bcrypt (cost 10) password hashing, `jwt.verify()` on every protected route, `httpOnly` `secure` `sameSite: "none"` cookies, `.select("-password")` on profile reads, rejected unauthenticated socket handshakes, server-stamped chat identity, one shared authorization helper across socket and REST, creator-ownership checks on `editCourse`, database-priced and re-verified Razorpay orders, short-lived HMAC upload signatures, single-use 5-minute OTPs, a two-step reset flow, message and body size caps, upload format allowlisting, taxonomy-constrained AI output, embeddings excluded from every response, and git-ignored secrets.
-
-> [!CAUTION]
-> **11 known gaps are documented deliberately** — wide-open CORS, unauthenticated payment routes, a client-supplied `userId` on verify, missing Razorpay HMAC validation, missing ownership checks on delete, a `localStorage` token, a 100-day JWT expiry, the client-side Zego secret, no rate limiting, unsanitized prompt interpolation, and unvalidated OAuth `role`. **Address these before any production deployment.**
-
-📖 **Full controls table and every gap with location, impact, and fix:** [docs/SECURITY.md](docs/SECURITY.md)
-
---- -->
-
-## 📁 Project Structure
-
-```
-VirtualCourses/
-├── Backend/                    # Express 5 API (ESM)
-│   ├── services/ai/            # ⭐ ingestion · retrieval · generation · providers
-│   ├── controllers/            # auth, user, course, search, order, live, review, chat
-│   ├── models/                 # User, Course, Lecture, LectureChunk, Review, LiveSession, ChatMessage
-│   ├── routes/ middleware/     # Thin URL → controller mapping; isAuth, multer
-│   ├── config/ utils/          # redis, connectDB, token, cloudinary, sendMail, socketHandler, courseAccess
-│   ├── tests/ scripts/         # Integration suite (real mongod + sockets); backfill/maintenance
-├── Frontend/                   # React 19 SPA — pages, components, redux, customHooks, config
-├── docs/                       # Detailed documentation (below) + atlas-vector-index.json
-
-```
-
-📖 **Fully annotated tree, module-by-module, plus why the AI layer is structured this way:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#-project-structure)
-
----
-
-## 📚 Documentation
+## Documentation
 
 | Document | Contents |
 | :--- | :--- |
-| **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** | The eleven problems that shaped the system, runtime topology, thirteen subsystem deep dives, technical highlights, and the annotated project structure. |
+| **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** | The eleven constraints that shaped the system, runtime topology, thirteen subsystem deep dives, and technical highlights. |
 | **[docs/AI_PIPELINE.md](docs/AI_PIPELINE.md)** | Provider layer and frozen constants, the full ingestion pipeline, retrieval and generation flow, search pipeline, `LectureChunk` data model, and the resilience matrix. |
-| **[docs/API.md](docs/API.md)** | Every REST endpoint with auth requirements, plus the complete Socket.io event contract. |
+| **[docs/FEATURES.md](docs/FEATURES.md)** | Every user-facing feature across AI, student, educator, real-time, auth, and payments — with source links. |
 
 ---
 
-
-## 👤 Author
+## Author
 
 **Saood Ali** — Full-stack engineer working on applied AI systems, distributed architecture, and the MERN stack.
 
 - GitHub: [@saood-ali](https://github.com/saood-ali)
 - LinkedIn: [saood-ali](https://www.linkedin.com/in/saood-ali)
-<!-- - Portfolio: [your-site.com](https://your-site.com) -->
 
 ---
 
@@ -415,8 +218,6 @@ VirtualCourses/
 
 **Built with React 19, Express 5, MongoDB Atlas Vector Search, and Google Gemini.**
 
-⭐ Star this repository if you find it useful.
+Star this repository if you find it useful.
 
 </div>
-
-
